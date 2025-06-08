@@ -406,7 +406,7 @@ const route1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProper
   default: home,
   meta
 }, Symbol.toStringTag, { value: "Module" }));
-const serverManifest = { "entry": { "module": "/canvas-games/assets/entry.client-XC4V7GpG.js", "imports": ["/canvas-games/assets/chunk-NL6KNZEE-97CjQthj.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": true, "module": "/canvas-games/assets/root-BmiJZF4g.js", "imports": ["/canvas-games/assets/chunk-NL6KNZEE-97CjQthj.js"], "css": ["/canvas-games/assets/root-B-neDKIB.css"], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/home": { "id": "routes/home", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/canvas-games/assets/home-BvaICcvT.js", "imports": ["/canvas-games/assets/home-BLYotF6O.js", "/canvas-games/assets/chunk-NL6KNZEE-97CjQthj.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 } }, "url": "/canvas-games/assets/manifest-351186f2.js", "version": "351186f2", "sri": void 0 };
+const serverManifest = { "entry": { "module": "/canvas-gamesassets/entry.client-XC4V7GpG.js", "imports": ["/canvas-gamesassets/chunk-NL6KNZEE-97CjQthj.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": true, "module": "/canvas-gamesassets/root-BmiJZF4g.js", "imports": ["/canvas-gamesassets/chunk-NL6KNZEE-97CjQthj.js"], "css": ["/canvas-gamesassets/root-B-neDKIB.css"], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 }, "routes/home": { "id": "routes/home", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasClientMiddleware": false, "hasErrorBoundary": false, "module": "/canvas-gamesassets/home-BvaICcvT.js", "imports": ["/canvas-gamesassets/home-BLYotF6O.js", "/canvas-gamesassets/chunk-NL6KNZEE-97CjQthj.js"], "css": [], "clientActionModule": void 0, "clientLoaderModule": void 0, "clientMiddlewareModule": void 0, "hydrateFallbackModule": void 0 } }, "url": "/canvas-gamesassets/manifest-1df80cf2.js", "version": "1df80cf2", "sri": void 0 };
 const assetsBuildDirectory = "build\\client";
 const basename = "/";
 const future = { "unstable_middleware": false, "unstable_optimizeDeps": false, "unstable_splitRouteModules": false, "unstable_subResourceIntegrity": false, "unstable_viteEnvironmentApi": false };
@@ -414,7 +414,7 @@ const ssr = true;
 const isSpaMode = false;
 const prerender = [];
 const routeDiscovery = { "mode": "lazy", "manifestPath": "/__manifest" };
-const publicPath = "/canvas-games/";
+const publicPath = "/canvas-games";
 const entry = { module: entryServer };
 const routes = {
   "root": {
