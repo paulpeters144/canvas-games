@@ -175,7 +175,7 @@ export function GameModal({
    createGame,
    onClose,
 }: {
-   createGame: (app: PIXI.Application) => void;
+   createGame: (app: PIXI.Application) => Promise<void>;
    onClose: () => void;
 }) {
    const containerRef = useRef<HTMLDivElement>(null);
@@ -185,7 +185,6 @@ export function GameModal({
    useEffect(() => {
       const init = async () => {
          if (!containerRef.current) return;
-
          const app = new PIXI.Application();
          await app.init({
             resizeTo: containerRef.current,
@@ -220,9 +219,6 @@ export function GameModal({
          document.exitFullscreen();
       }
    };
-
-   const _navigate = useNavigate();
-   const _onModalClose = () => {};
 
    return (
       <div ref={wrapperRef} className="fixed inset-0 flex items-center justify-center z-50">
