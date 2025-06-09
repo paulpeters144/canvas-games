@@ -39,7 +39,7 @@ const games = [
 export function GameGallery() {
    const [searchParams, setSearchParams] = useSearchParams();
    const activeGame = searchParams.get("game");
-   const [_scrolled, setScrolled] = useState(false);
+   const [, setScrolled] = useState(false);
    const [activeSection, setActiveSection] = useState("home");
 
    useEffect(() => {
@@ -61,7 +61,7 @@ export function GameGallery() {
    return (
       <div className="mx-auto max-w-[100rem]">
          <div id="home" />
-         <div className={"sticky top-0 z-50 bg-gray-800 py-6"}>
+         <div className="sticky top-0 z-50 bg-gray-800 py-6 rounded-b-lg">
             <div className="grid grid-cols-2 px-8">
                <div className="flex items-center col-start-1">
                   <img className="mr-5 w-8 h-8" src={"assets/pixel-earth.png"} alt="pixel earth" />
@@ -142,7 +142,7 @@ export function GameGallery() {
                      }}
                      // TODO: need to add a pointy cursor when only when there's no modal
                      className={
-                        "relative overflow-hidden rounded-lg shadow-lg group border-2 border-transparent hover:border-sky-400 transition"
+                        "relative overflow-hidden rounded-lg shadow-lg group border-3 border-transparent hover:border-sky-400 transition"
                      }
                   >
                      <img
@@ -272,7 +272,7 @@ export function GameModal({
 
 export function AppFooter() {
    return (
-      <footer className="bg-gray-800 text-gray-300 mt-20 w-full rounded-lg">
+      <footer className="bg-gray-800 text-gray-300 mt-20 w-full rounded-t-lg">
          <div className="max-w-screen-xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-10">
             <div>
                <div className="flex items-center space-x-3">

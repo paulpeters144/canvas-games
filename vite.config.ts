@@ -19,5 +19,5 @@ export default defineConfig({
          },
       },
    ],
-   base: "/canvas-games",
+   base: "/canvas-games/",
 });

@@ -1,6 +1,6 @@
 {
    "name": "canvas-games",
-   "homepage": "https://paulpeters144.github.io/canvas-games/",
+   "homepage": "https://paulpeters144.github.io/canvas-games",
    "private": true,
    "type": "module",
    "scripts": {
