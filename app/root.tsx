@@ -10,17 +10,9 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 
+// TODO: need to get the "/canvas-games/ from an env var"
 export const links: Route.LinksFunction = () => [
-   { rel: "preconnect", href: "https://fonts.googleapis.com" },
-   {
-      rel: "preconnect",
-      href: "https://fonts.gstatic.com",
-      crossOrigin: "anonymous",
-   },
-   {
-      rel: "stylesheet",
-      href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-   },
+   { rel: "icon", href: "/canvas-games/favicon.ico", type: "image/x-icon" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

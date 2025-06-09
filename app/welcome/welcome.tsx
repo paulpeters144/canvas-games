@@ -66,10 +66,10 @@ export function GameGallery() {
                <div className="flex items-center col-start-1">
                   <img className="mr-5 w-8 h-8" src={"assets/pixel-earth.png"} alt="pixel earth" />
                   <h1 className="font-font md:text-xl sm:text-md font-bold sm:block hidden text-white">
-                     Canvas Games
+                     Canvas Game
                   </h1>
                </div>
-               <div className="flex justify-end items-center col-start-2 space-x-8 font-font text-md font-bold">
+               <div className="flex justify-end items-center col-start-2 space-x-8 font-font md:text-md text-sm font-bold">
                   <a
                      href="#home"
                      className={
@@ -107,9 +107,7 @@ export function GameGallery() {
          <div className="px-8">
             <div className="flex items-center mt-[8rem]">
                <img className="mr-5" src={"assets/vr-boy.png"} alt="boy vr headset" />
-               <h1 className="font-font md:text-xl sm:text-md font-bold sm:block hidden text-white">
-                  About
-               </h1>
+               <h1 className="font-font md:text-xl sm:text-md font-bold text-white">About</h1>
             </div>
             <div className="w-full flex justify-center mt-3">
                <div className="max-w-[50rem] text-gray-200">
@@ -126,9 +124,7 @@ export function GameGallery() {
          <div className="px-8">
             <div className="flex items-center mt-[8rem]">
                <img className="mr-5" src={"assets/rocket.png"} alt="rocket ship" />
-               <h1 className="font-font md:text-xl sm:text-md font-bold sm:block hidden text-white">
-                  Collection
-               </h1>
+               <h1 className="font-font md:text-xl sm:text-md font-bold text-white">Collection</h1>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
@@ -176,8 +172,8 @@ export function GameGallery() {
          </div>
          <div className="my-14">
             <img
-               src="/assets/earth-large.png"
-               alt="Logo"
+               src="assets/earth-large.png"
+               alt="Large Earth"
                className="mx-auto md:w-[35rem] w-[20rem]"
             />
          </div>
