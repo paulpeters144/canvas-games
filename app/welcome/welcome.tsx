@@ -69,7 +69,7 @@ export function GameGallery() {
                      Canvas Game
                   </h1>
                </div>
-               <div className="flex justify-end items-center col-start-2 space-x-8 font-font md:text-md text-sm font-bold">
+               <div className="flex justify-end items-center col-start-2 sm:space-x-8 space-x-4 font-font md:text-md text-sm font-bold">
                   <a
                      href="#home"
                      className={
