@@ -1,0 +1,82 @@
+{
+   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+   "vcs": {
+      "enabled": false,
+      "clientKind": "git",
+      "useIgnoreFile": false
+   },
+   "files": {
+      "ignoreUnknown": true,
+      "include": ["*/**"],
+      "ignore": [
+         "cdk.out/*",
+         "*.css",
+         "api/client.g.ts",
+         "build/*",
+         "postcss.config.js",
+         "tailwind.config.js",
+         ".react-router",
+         ".vscode/*"
+      ]
+   },
+   "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 3,
+      "lineWidth": 100
+   },
+   "organizeImports": {
+      "enabled": true
+   },
+   "linter": {
+      "enabled": true,
+      "rules": {
+         "recommended": true,
+         "suspicious": {
+            "noConsoleLog": {
+               "level": "warn",
+               "fix": "safe"
+            },
+            "noEmptyInterface": {
+               "level": "warn",
+               "fix": "safe"
+            }
+         },
+         "correctness": {
+            "noUnusedVariables": {
+               "level": "warn",
+               "fix": "safe"
+            },
+            "useExhaustiveDependencies": {
+               "level": "off",
+               "options": {}
+            },
+            "noUnusedImports": {
+               "fix": "safe",
+               "level": "warn"
+            },
+            "noEmptyPattern": "off"
+         },
+         "style": {
+            "useExportType": {
+               "level": "warn",
+               "fix": "safe"
+            },
+            "useConst": {
+               "level": "warn",
+               "fix": "safe"
+            }
+         },
+         "a11y": {
+            "useKeyWithClickEvents": "off",
+            "useButtonType": "off",
+            "useValidAnchor": "off"
+         }
+      }
+   },
+   "javascript": {
+      "formatter": {
+         "quoteStyle": "double"
+      }
+   }
+}
