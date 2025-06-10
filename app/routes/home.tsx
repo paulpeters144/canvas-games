@@ -1,4 +1,5 @@
 import { exampleGame } from "games/placeholder/main";
+import { createSlitherSlimGame } from "games/slither-slim/main";
 import * as PIXI from "pixi.js";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -14,34 +15,40 @@ export function meta({}: Route.MetaArgs) {
 
 const games = [
    {
-      id: "placeholder1",
-      title: "Placeholder",
+      id: "slither-slim-id",
+      title: "Slither Slim",
       image: "game-imgs/space-game.png",
+      init: createSlitherSlimGame,
    },
    {
       id: "placeholder2",
       title: "Placeholder",
       image: "game-imgs/space-game.png",
+      init: exampleGame,
    },
    {
       id: "placeholder3",
       title: "Placeholder",
       image: "game-imgs/space-game.png",
+      init: exampleGame,
    },
    {
       id: "placeholder4",
       title: "Placeholder",
       image: "game-imgs/space-game.png",
+      init: exampleGame,
    },
    {
       id: "placeholder5",
       title: "Placeholder",
       image: "game-imgs/space-game.png",
+      init: exampleGame,
    },
    {
       id: "placeholder6",
       title: "Placeholder",
       image: "game-imgs/space-game.png",
+      init: exampleGame,
    },
 ];
 
@@ -109,7 +116,7 @@ export default function Home() {
                         />
                         {activeGame === game.id && (
                            <GameModal
-                              createGame={exampleGame}
+                              createGame={game.init}
                               onClose={() => {
                                  if (location.hash.includes("collection")) navigate("#collection");
                                  else setSearchParams("");
@@ -171,16 +178,33 @@ export function GameCard({ title, onClick }: { title: string; onClick: () => voi
       </div>
    );
 }
-export function GameModal({
-   createGame,
-   onClose,
-}: {
+
+interface GameModalProps {
    createGame: (app: PIXI.Application) => Promise<void>;
    onClose: () => void;
-}) {
+}
+
+export function GameModal({ createGame, onClose }: GameModalProps) {
    const containerRef = useRef<HTMLDivElement>(null);
    const wrapperRef = useRef<HTMLDivElement>(null);
    const appRef = useRef<PIXI.Application | null>(null);
+
+   const [windowDimensions, setWindowDimensions] = useState({
+      width: window.innerWidth,
+      height: window.innerHeight,
+   });
+
+   useEffect(() => {
+      const handleResize = () => {
+         setWindowDimensions({
+            width: window.innerWidth,
+            height: window.innerHeight,
+         });
+      };
+
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+   }, []);
 
    useEffect(() => {
       const init = async () => {
@@ -222,17 +246,19 @@ export function GameModal({
 
    const { isFullscreen } = useGameIsFullScreen();
 
+   const maxWidthBasedOnHeight = windowDimensions.height * (16 / 9);
+
    return (
       <div ref={wrapperRef} className="fixed inset-0 flex items-center justify-center z-50">
          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
          <div
-            className={cn(
-               "relative z-10 w-[90vw] max-w-[1920px] aspect-[16/9] rounded-lg shadow-lg",
-               {
-                  "w-full h-full max-w-full": isFullscreen,
-               },
-            )}
+            style={{
+               maxWidth: isFullscreen ? `${maxWidthBasedOnHeight}px` : undefined,
+            }}
+            className={cn("aspect-[16/9] relative z-10 w-[90vw] rounded-lg shadow-lg", {
+               "w-full max-w-full": isFullscreen,
+            })}
          >
             {!isFullscreen && (
                <div>

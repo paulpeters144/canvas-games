@@ -47,6 +47,8 @@ interface GameProps {
 //     at _Ticker2.update (chunk-WZSKTUMO.js?v=109420bd:7710:29)
 //     at _tick (chunk-WZSKTUMO.js?v=109420bd:7379:14)
 
+let resizeTimer = 0;
+const RESIZE_INTERVAL_MS = 250;
 export const maybeResize = (props: GameProps) => {
    try {
       const { app, game } = props;
@@ -54,8 +56,11 @@ export const maybeResize = (props: GameProps) => {
       if (!app?.screen) return;
       if (!game) return;
 
-      if (app.screen.width === game.width) return;
+      resizeTimer += app.ticker.deltaMS;
 
-      resizeGame(props);
+      if (resizeTimer >= RESIZE_INTERVAL_MS) {
+         resizeGame(props);
+         resizeTimer = 0;
+      }
    } catch (_) {}
 };
