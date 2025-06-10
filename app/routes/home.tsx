@@ -1,6 +1,6 @@
-import { exampleGame } from "games/simple/test";
+import { exampleGame } from "games/placeholder/main";
 import * as PIXI from "pixi.js";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { cn } from "~/util/util";
 import type { Route } from "./+types/home";
@@ -16,32 +16,32 @@ const games = [
    {
       id: "placeholder1",
       title: "Placeholder",
-      image: "https://imgs.search.brave.com/_bEUvkX0umM3x5ygwOYwiFilG8kLuIpG1i71-Al0qHI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA1Lzk5LzcyLzA2/LzM2MF9GXzU5OTcy/MDYyNV9OMlU4QVF6/aFM1eTdsbHJwMkFN/QVFtS0w0QjZuV0hL/VC5qcGc",
+      image: "game-imgs/space-game.png",
    },
    {
       id: "placeholder2",
       title: "Placeholder",
-      image: "https://imgs.search.brave.com/_bEUvkX0umM3x5ygwOYwiFilG8kLuIpG1i71-Al0qHI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA1Lzk5LzcyLzA2/LzM2MF9GXzU5OTcy/MDYyNV9OMlU4QVF6/aFM1eTdsbHJwMkFN/QVFtS0w0QjZuV0hL/VC5qcGc",
+      image: "game-imgs/space-game.png",
    },
    {
       id: "placeholder3",
       title: "Placeholder",
-      image: "https://imgs.search.brave.com/_bEUvkX0umM3x5ygwOYwiFilG8kLuIpG1i71-Al0qHI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA1Lzk5LzcyLzA2/LzM2MF9GXzU5OTcy/MDYyNV9OMlU4QVF6/aFM1eTdsbHJwMkFN/QVFtS0w0QjZuV0hL/VC5qcGc",
+      image: "game-imgs/space-game.png",
    },
    {
       id: "placeholder4",
       title: "Placeholder",
-      image: "https://imgs.search.brave.com/_bEUvkX0umM3x5ygwOYwiFilG8kLuIpG1i71-Al0qHI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA1Lzk5LzcyLzA2/LzM2MF9GXzU5OTcy/MDYyNV9OMlU4QVF6/aFM1eTdsbHJwMkFN/QVFtS0w0QjZuV0hL/VC5qcGc",
+      image: "game-imgs/space-game.png",
    },
    {
       id: "placeholder5",
       title: "Placeholder",
-      image: "https://imgs.search.brave.com/_bEUvkX0umM3x5ygwOYwiFilG8kLuIpG1i71-Al0qHI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA1Lzk5LzcyLzA2/LzM2MF9GXzU5OTcy/MDYyNV9OMlU4QVF6/aFM1eTdsbHJwMkFN/QVFtS0w0QjZuV0hL/VC5qcGc",
+      image: "game-imgs/space-game.png",
    },
    {
       id: "placeholder6",
       title: "Placeholder",
-      image: "https://imgs.search.brave.com/_bEUvkX0umM3x5ygwOYwiFilG8kLuIpG1i71-Al0qHI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly90My5m/dGNkbi5uZXQvanBn/LzA1Lzk5LzcyLzA2/LzM2MF9GXzU5OTcy/MDYyNV9OMlU4QVF6/aFM1eTdsbHJwMkFN/QVFtS0w0QjZuV0hL/VC5qcGc",
+      image: "game-imgs/space-game.png",
    },
 ];
 
@@ -188,7 +188,7 @@ export function GameModal({
          const app = new PIXI.Application();
          await app.init({
             resizeTo: containerRef.current,
-            backgroundColor: 0xf8da95,
+            backgroundColor: "#000000",
             antialias: true,
             autoDensity: true,
          });
@@ -220,25 +220,38 @@ export function GameModal({
       }
    };
 
+   const { isFullscreen } = useGameIsFullScreen();
+
    return (
       <div ref={wrapperRef} className="fixed inset-0 flex items-center justify-center z-50">
          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-         <div className="relative z-10 w-[90vw] max-w-[1920px] aspect-[16/9] bg-white rounded-lg shadow-lg">
-            <button
-               onClick={onClose}
-               className="absolute top-2 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold cursor-pointer"
-            >
-               ✕
-            </button>
+         <div
+            className={cn(
+               "relative z-10 w-[90vw] max-w-[1920px] aspect-[16/9] rounded-lg shadow-lg",
+               {
+                  "w-full h-full max-w-full": isFullscreen,
+               },
+            )}
+         >
+            {!isFullscreen && (
+               <div>
+                  <button
+                     onClick={onClose}
+                     className="absolute top-2 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold cursor-pointer"
+                  >
+                     ✕
+                  </button>
 
-            <button
-               onClick={toggleFullscreen}
-               title="Toggle Fullscreen"
-               className="absolute bottom-2 right-3 text-gray-400 hover:text-gray-700 text-4xl cursor-pointer"
-            >
-               ⛶
-            </button>
+                  <button
+                     onClick={toggleFullscreen}
+                     title="Toggle Fullscreen"
+                     className="absolute bottom-2 right-3 text-gray-400 hover:text-gray-700 text-4xl cursor-pointer"
+                  >
+                     ⛶
+                  </button>
+               </div>
+            )}
 
             <div ref={containerRef} className="w-full h-full overflow-hidden rounded" />
          </div>
@@ -294,4 +307,30 @@ export function AppFooter() {
          </div>
       </footer>
    );
+}
+
+function useGameIsFullScreen() {
+   const [isFullscreen, setIsFullscreen] = useState(false);
+
+   useEffect(() => {
+      const handleFullscreenChange = () => {
+         setIsFullscreen(!!document.fullscreenElement);
+      };
+
+      document.addEventListener("fullscreenchange", handleFullscreenChange);
+      document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+      document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+      document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+      setIsFullscreen(!!document.fullscreenElement);
+
+      return () => {
+         document.removeEventListener("fullscreenchange", handleFullscreenChange);
+         document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+         document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+         document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
+      };
+   }, []);
+
+   return { isFullscreen };
 }
