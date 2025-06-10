@@ -1,7 +1,12 @@
 import { maybeResize } from "games/util";
 import * as PIXI from "pixi.js";
+import {
+   type GameTiles,
+   createGameTiles as createBackgroundTiles,
+   loadTileTextures,
+} from "./background-tiles";
 
-const BASE_PATH = "game-imgs/slither-slim";
+export const BASE_PATH = "game-imgs/slither-slim";
 
 export async function createSlitherSlimGame(app: PIXI.Application) {
    const sceneEngine = newSceneEngine(app);
@@ -43,54 +48,15 @@ export const newSceneEngine = (app: PIXI.Application) => {
 };
 
 export const gameScene = (game: PIXI.ContainerChild): IScene => {
+   let gameTiles: GameTiles | undefined;
+
    return {
       load: async () => {
-         const arr = Array.from({ length: 5 });
-         const loadAsset = (str: string) => PIXI.Assets.load(str);
-         const promises = arr.map((_, idx) => loadAsset(`${BASE_PATH}/box-${idx}.png`));
-         const assets = await Promise.all(promises);
-         loadBackground({ game, assets });
+         const tileTextures = await loadTileTextures();
+         gameTiles = createBackgroundTiles(tileTextures);
+         gameTiles.tiles.map((t) => game.addChild(t.sprite));
       },
 
       update: (_tick: PIXI.Ticker) => {},
    };
 };
-
-const loadBackground = (props: { game: PIXI.ContainerChild; assets: PIXI.Texture[] }) => {
-   const { game, assets } = props;
-   const getRandomTile = (): PIXI.Sprite => {
-      if (assets.length === 0) {
-         throw new Error("The 'tiles' array is empty. Cannot get a random tile.");
-      }
-
-      const randomIndex = Math.floor(Math.random() * assets.length);
-      const texture = assets[randomIndex];
-      const result = new PIXI.Sprite(texture);
-      return result;
-   };
-
-   const { rows, col } = { rows: 15, col: 25 };
-   for (let i = 0; i < Array.from({ length: rows * col }).length; i++) {
-      const tile = getRandomTile();
-      tile.scale.set(0.25);
-      tile.anchor.set(0.5, 0.5);
-      const cords = getCoordsFromIndex(i, col);
-      tile.x = cords.row * tile.width + tile.width * 0.5;
-      tile.y = cords.col * tile.height + tile.height * 0.5;
-      game.addChild(tile);
-   }
-};
-
-function getCoordsFromIndex(index: number, numCols: number): { col: number; row: number } {
-   if (numCols <= 0) {
-      throw new Error("Number of columns must be a positive integer.");
-   }
-   if (index < 0) {
-      throw new Error("Index must be a non-negative integer.");
-   }
-
-   const row = index % numCols;
-   const col = Math.floor(index / numCols);
-
-   return { col, row };
-}
