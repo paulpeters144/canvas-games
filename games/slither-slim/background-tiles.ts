@@ -3,15 +3,19 @@ import { BASE_PATH } from "./main";
 
 export interface GameTiles {
    tiles: GameTile[];
+   getTileFromIndexPos: (props: { row: number; col: number }) => GameTile;
 }
 
-export const createGameTiles = (assets: PIXI.Texture[]): GameTiles => {
+interface CreateGameProps {
+   textures: PIXI.Texture[];
+   gridSize: { row: number; col: number };
+}
+export const createGameTiles = ({ gridSize, textures }: CreateGameProps): GameTiles => {
    const tiles: GameTile[] = [];
-
-   const { rows, col } = { rows: 15, col: 25 };
-   for (let i = 0; i < rows * col; i++) {
-      const randomIndex = Math.floor(Math.random() * assets.length);
-      const texture = assets[randomIndex];
+   const { row, col } = gridSize;
+   for (let i = 0; i < row * col; i++) {
+      const randomIndex = Math.floor(Math.random() * textures.length);
+      const texture = textures[randomIndex];
       const sprite = new PIXI.Sprite(texture);
 
       sprite.scale.set(0.25);
@@ -20,15 +24,21 @@ export const createGameTiles = (assets: PIXI.Texture[]): GameTiles => {
       const rowIdx = i % col;
       const colIdx = Math.floor(i / col);
 
-      sprite.x = rowIdx * sprite.width + sprite.width * 0.5;
-      sprite.y = colIdx * sprite.height + sprite.height * 0.5;
+      sprite.x = colIdx * sprite.width + sprite.width * 0.5;
+      sprite.y = rowIdx * sprite.height + sprite.height * 0.5;
 
       const tile = createGameTile(sprite);
       tiles.push(tile);
    }
 
+   const getTileFromIndexPos = (props: { row: number; col: number }): GameTile => {
+      const index = props.row * gridSize.row + props.col;
+      return tiles[index];
+   };
+
    return {
       tiles,
+      getTileFromIndexPos,
    };
 };
 
@@ -56,9 +66,9 @@ const createGameTile = (sprite: PIXI.Sprite): GameTile => {
    return { sprite, getIndexPos };
 };
 
-export const loadTileTextures = async () => {
+export const loadTileTextures = async (): Promise<PIXI.Texture[]> => {
    const arr = Array.from({ length: 5 });
-   const loadAsset = (str: string) => PIXI.Assets.load(str);
+   const loadAsset = (str: string): Promise<PIXI.Texture> => PIXI.Assets.load(str);
    const promises = arr.map((_, idx) => loadAsset(`${BASE_PATH}/box-${idx}.png`));
    const assets = await Promise.all(promises);
    return assets;

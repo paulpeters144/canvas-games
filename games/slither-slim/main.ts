@@ -53,7 +53,10 @@ export const gameScene = (game: PIXI.ContainerChild): IScene => {
    return {
       load: async () => {
          const tileTextures = await loadTileTextures();
-         gameTiles = createBackgroundTiles(tileTextures);
+         gameTiles = createBackgroundTiles({
+            textures: tileTextures,
+            gridSize: { row: 25, col: 15 },
+         });
          gameTiles.tiles.map((t) => game.addChild(t.sprite));
       },
 

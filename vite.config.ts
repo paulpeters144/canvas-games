@@ -20,4 +20,7 @@ export default defineConfig({
       },
    ],
    base: "/canvas-games/",
+   test: {
+      environment: "jsdom",
+   },
 });
