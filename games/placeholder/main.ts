@@ -1,4 +1,4 @@
-import { maybeResize } from "games/util";
+import { maybeResize } from "games/util/util";
 import * as PIXI from "pixi.js";
 
 export async function exampleGame(app: PIXI.Application) {

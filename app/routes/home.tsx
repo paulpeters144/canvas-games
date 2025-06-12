@@ -246,6 +246,8 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
 
    const { isFullscreen } = useGameIsFullScreen();
 
+   usePreventArrowScroll();
+
    const maxWidthBasedOnHeight = windowDimensions.height * (16 / 9);
 
    return (
@@ -359,4 +361,21 @@ function useGameIsFullScreen() {
    }, []);
 
    return { isFullscreen };
+}
+
+function usePreventArrowScroll() {
+   useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+         const keysToBlock = ["ArrowUp", "ArrowDown", " "];
+         if (keysToBlock.includes(e.key)) {
+            e.preventDefault();
+         }
+      };
+
+      window.addEventListener("keydown", handleKeyDown, { passive: false });
+
+      return () => {
+         window.removeEventListener("keydown", handleKeyDown);
+      };
+   }, []);
 }
