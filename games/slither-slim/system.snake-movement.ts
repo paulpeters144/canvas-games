@@ -1,7 +1,6 @@
-import { collide } from "games/util/util";
 import type * as PIXI from "pixi.js";
 import type { GameTiles } from "./background-tiles";
-import { bus } from "./main";
+import { bus, collide } from "./main";
 import type { Snake } from "./snake";
 import { FaceDir } from "./snake.segment";
 

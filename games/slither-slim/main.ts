@@ -1,5 +1,5 @@
 import { eBus } from "games/util/event-bus";
-import { type Camera, collide, createCamera, maybeResize, resizeGame } from "games/util/util";
+import { maybeResize, resizeGame } from "games/util/util";
 import * as PIXI from "pixi.js";
 import { type Apples, loadApples } from "./apple";
 import {
@@ -8,6 +8,7 @@ import {
    createGameTiles as createBackgroundTiles,
    loadTileTextures,
 } from "./background-tiles";
+import { type Camera, createCamera } from "./camera";
 import type { EventMap } from "./event-map";
 import { type Snake, createSnake, loadSnakeTextures } from "./snake";
 import { type SnakeMovement, snakeMovementSystem } from "./system.snake-movement";
@@ -305,24 +306,6 @@ const createPregameOverlay = () => {
    return { addTo, update, setVisible };
 };
 
-const isOutOfBounds = (props: { snake: Snake; bounds: { width: number; height: number } }) => {
-   const { snake, bounds } = props;
-   const rect = {
-      x: snake.head.sprite.x,
-      y: snake.head.sprite.y,
-      width: snake.head.sprite.width,
-      height: snake.head.sprite.height,
-   };
-
-   const buffer = rect.width * 0.35;
-   if (rect.x - buffer < 0) return true;
-   if (rect.y - buffer < 0) return true;
-   if (rect.x + buffer > bounds.width) return true;
-   if (rect.y + buffer > bounds.height) return true;
-
-   return false;
-};
-
 const fromOpenTiles = ({
    gameTiles,
    snake,
@@ -367,4 +350,57 @@ const fromOpenTiles = ({
    };
 
    return { getRandomTile };
+};
+
+export const collide = {
+   circles: (sprite1: PIXI.Sprite, sprite2: PIXI.Sprite): boolean => {
+      const buffer = 8;
+      const circle1 = {
+         x: sprite1.x,
+         y: sprite1.y,
+         radius: sprite1.width * 0.5 - buffer,
+      };
+      const circle2 = {
+         x: sprite2.x,
+         y: sprite2.y,
+         radius: sprite2.width * 0.5,
+      };
+
+      const dx = circle1.x - circle2.x;
+      const dy = circle1.y - circle2.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      return distance < circle1.radius + circle2.radius;
+   },
+
+   squares: (sprite1: PIXI.Sprite, sprite2: PIXI.Sprite): boolean => {
+      const bounds1 = sprite1.getBounds();
+      const bounds2 = sprite2.getBounds();
+
+      const xOverlap = bounds1.left < bounds2.right && bounds1.right > bounds2.left;
+      const yOverlap = bounds1.top < bounds2.bottom && bounds1.bottom > bounds2.top;
+
+      return xOverlap && yOverlap;
+   },
+};
+
+export const isOutOfBounds = (props: {
+   snake: Snake;
+   bounds: { width: number; height: number };
+}) => {
+   const { snake, bounds } = props;
+   const rect = {
+      x: snake.head.sprite.x,
+      y: snake.head.sprite.y,
+      width: snake.head.sprite.width,
+      height: snake.head.sprite.height,
+   };
+
+   const buffer = rect.width * 0.35;
+   if (rect.x - buffer < 0) return true;
+   if (rect.y - buffer < 0) return true;
+   if (rect.x + buffer > bounds.width) return true;
+   if (rect.y + buffer > bounds.height) return true;
+
+   return false;
 };
