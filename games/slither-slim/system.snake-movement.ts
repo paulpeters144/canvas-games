@@ -2,6 +2,7 @@ import type * as PIXI from "pixi.js";
 import type { GameTiles } from "./background-tiles";
 import { bus } from "./main";
 import type { Snake } from "./snake";
+import { FaceDir } from "./snake.segment";
 
 export interface SnakeMovement {
    update: (ticker: PIXI.Ticker) => void;
@@ -13,18 +14,11 @@ export interface SnakeMovementSystemProps {
    initPos: { row: number; col: number };
 }
 
-enum faceDir {
-   up = 0,
-   right = 1,
-   down = 2,
-   left = 3,
-}
-
 export const snakeMovementSystem = (props: SnakeMovementSystemProps): SnakeMovement => {
    const { snake, gameTiles, initPos } = props;
 
-   let nextPos = { ...initPos, direction: faceDir.down };
-   let queuePos = { ...initPos, direction: faceDir.down };
+   let nextPos = { ...initPos, direction: FaceDir.down };
+   let queuePos = { ...initPos, direction: FaceDir.down };
 
    place(snake).on(gameTiles).at(initPos);
    snake.head.direction.faceDown();
@@ -34,19 +28,19 @@ export const snakeMovementSystem = (props: SnakeMovementSystemProps): SnakeMovem
       if (!snake) return;
       if (pos === "up") {
          if (snake.head.direction.isFacing.down()) return;
-         queuePos = { ...nextPos, direction: faceDir.up, row: nextPos.row - 1 };
+         queuePos = { ...nextPos, direction: FaceDir.up, row: nextPos.row - 1 };
       }
       if (pos === "right") {
          if (snake.head.direction.isFacing.left()) return;
-         queuePos = { ...nextPos, direction: faceDir.right, col: nextPos.col + 1 };
+         queuePos = { ...nextPos, direction: FaceDir.right, col: nextPos.col + 1 };
       }
       if (pos === "down") {
          if (snake.head.direction.isFacing.up()) return;
-         queuePos = { ...nextPos, direction: faceDir.down, row: nextPos.row + 1 };
+         queuePos = { ...nextPos, direction: FaceDir.down, row: nextPos.row + 1 };
       }
       if (pos === "left") {
          if (snake.head.direction.isFacing.right()) return;
-         queuePos = { ...nextPos, direction: faceDir.left, col: nextPos.col - 1 };
+         queuePos = { ...nextPos, direction: FaceDir.left, col: nextPos.col - 1 };
       }
    });
 
@@ -55,25 +49,25 @@ export const snakeMovementSystem = (props: SnakeMovementSystemProps): SnakeMovem
 
       nextPos = { ...queuePos };
 
-      if (nextPos.direction === faceDir.up) {
+      if (nextPos.direction === FaceDir.up) {
          snake.head.direction.faceUp();
          move(snake).on(gameTiles).to(nextPos);
-         queuePos = { ...nextPos, direction: faceDir.up, row: nextPos.row - 1 };
+         queuePos = { ...nextPos, direction: FaceDir.up, row: nextPos.row - 1 };
       }
-      if (nextPos.direction === faceDir.right) {
+      if (nextPos.direction === FaceDir.right) {
          snake.head.direction.faceRight();
          move(snake).on(gameTiles).to(nextPos);
-         queuePos = { ...nextPos, direction: faceDir.right, col: nextPos.col + 1 };
+         queuePos = { ...nextPos, direction: FaceDir.right, col: nextPos.col + 1 };
       }
-      if (nextPos.direction === faceDir.down) {
+      if (nextPos.direction === FaceDir.down) {
          snake.head.direction.faceDown();
          move(snake).on(gameTiles).to(nextPos);
-         queuePos = { ...nextPos, direction: faceDir.down, row: nextPos.row + 1 };
+         queuePos = { ...nextPos, direction: FaceDir.down, row: nextPos.row + 1 };
       }
-      if (nextPos.direction === faceDir.left) {
+      if (nextPos.direction === FaceDir.left) {
          snake.head.direction.faceLeft();
          move(snake).on(gameTiles).to(nextPos);
-         queuePos = { ...nextPos, direction: faceDir.left, col: nextPos.col - 1 };
+         queuePos = { ...nextPos, direction: FaceDir.left, col: nextPos.col - 1 };
       }
    };
 

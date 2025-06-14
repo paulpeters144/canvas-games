@@ -1,9 +1,16 @@
 import type { IndexPos, Position } from "games/util/util";
 import * as PIXI from "pixi.js";
 
+export enum FaceDir {
+   up = 0,
+   right = 1,
+   down = 2,
+   left = 3,
+}
+
 export interface SnakeSegment {
    indexPos: {
-      curr: IndexPos;
+      prev: IndexPos;
       next: IndexPos;
    };
    nextPos: Position;
@@ -108,7 +115,7 @@ export const createSegment = (texture: PIXI.Texture): SnakeSegment => {
 
    return {
       nextPos,
-      indexPos: { next: nextIdxPos, curr: currIdxPos },
+      indexPos: { next: nextIdxPos, prev: currIdxPos },
       direction,
       moveTo,
       placeAt,
