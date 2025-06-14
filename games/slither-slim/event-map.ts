@@ -1,4 +1,4 @@
 export type EventMap = {
    keyPressed: "up" | "right" | "down" | "left" | "enter";
-   gameState: "pause" | "play";
+   gameEvent: "pause" | "play" | "gameOver";
 };

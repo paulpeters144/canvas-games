@@ -22,19 +22,8 @@ export const resizeGame = (app: PIXI.Application) => {
    }
 };
 
-// TODO: we need to clean up the game when the application closes. right now, the
-// ticker still runs once when closing the modal with the below error
-// react-dom_client.js?v=109420bd:17987 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-// pixi__js.js?v=109420bd:6539 Uncaught TypeError: Cannot read properties of null (reading 'screen')
-//     at get screen (pixi__js.js?v=109420bd:6539:26)
-//     at maybeResize (test.ts:156:9)
-//     at TickerListener.update [as _fn] (test.ts:38:16)
-//     at TickerListener.emit (chunk-WZSKTUMO.js?v=109420bd:7313:14)
-//     at _Ticker2.update (chunk-WZSKTUMO.js?v=109420bd:7710:29)
-//     at _tick (chunk-WZSKTUMO.js?v=109420bd:7379:14)
-
 let resizeTimer = 0;
-const RESIZE_INTERVAL_MS = 250;
+const RESIZE_INTERVAL_MS = 150;
 export const maybeResize = (app: PIXI.Application) => {
    try {
       resizeTimer += app.ticker.deltaMS;
@@ -139,3 +128,35 @@ export interface IndexPos {
    row: number;
    col: number;
 }
+
+export const collide = {
+   circles: (sprite1: PIXI.Sprite, sprite2: PIXI.Sprite): boolean => {
+      const buffer = 8;
+      const circle1 = {
+         x: sprite1.x,
+         y: sprite1.y,
+         radius: sprite1.width * 0.5 - buffer,
+      };
+      const circle2 = {
+         x: sprite2.x,
+         y: sprite2.y,
+         radius: sprite2.width * 0.5,
+      };
+
+      const dx = circle1.x - circle2.x;
+      const dy = circle1.y - circle2.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      return distance < circle1.radius + circle2.radius;
+   },
+
+   squares: (sprite1: PIXI.Sprite, sprite2: PIXI.Sprite): boolean => {
+      const bounds1 = sprite1.getBounds();
+      const bounds2 = sprite2.getBounds();
+
+      const xOverlap = bounds1.left < bounds2.right && bounds1.right > bounds2.left;
+      const yOverlap = bounds1.top < bounds2.bottom && bounds1.bottom > bounds2.top;
+
+      return xOverlap && yOverlap;
+   },
+};

@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { BASE_PATH, FONT_STYLE } from "./main";
+import { BASE_PATH, ZLayer } from "./main";
 
 export interface GameTiles {
    tiles: GameTile[];
@@ -19,6 +19,12 @@ export const createGameTiles = ({ gridSize, textures }: CreateGameProps): GameTi
    const tiles: GameTile[] = [];
    const { row, col } = gridSize;
 
+   const font = new PIXI.TextStyle({
+      fontFamily: "GraphPix",
+      fontSize: 6,
+      fill: "#000000",
+   });
+
    for (let i = 0; i < row * col; i++) {
       const randomIndex = Math.floor(Math.random() * textures.length);
       const texture = textures[randomIndex];
@@ -33,6 +39,8 @@ export const createGameTiles = ({ gridSize, textures }: CreateGameProps): GameTi
       sprite.x = colIdx * sprite.width + sprite.width * 0.5;
       sprite.y = rowIdx * sprite.height + sprite.height * 0.5;
 
+      sprite.zIndex = ZLayer.bottom;
+
       const tile = createGameTile(sprite);
       tiles.push(tile);
    }
@@ -45,10 +53,11 @@ export const createGameTiles = ({ gridSize, textures }: CreateGameProps): GameTi
    const displayIndexes = (game: PIXI.ContainerChild) => {
       for (let i = 0; i < tiles.length; i++) {
          const tile = tiles[i];
-         const text = new PIXI.Text({ style: FONT_STYLE, text: `${i}` });
+         const text = new PIXI.Text({ style: font, text: `${i}` });
          text.resolution = 2;
          const { x, y } = tile.sprite;
          text.position.set(x - 18, y - 18);
+         text.zIndex = ZLayer.mid;
          game.addChild(text);
       }
    };
@@ -56,10 +65,11 @@ export const createGameTiles = ({ gridSize, textures }: CreateGameProps): GameTi
    const displayPosIndexes = (game: PIXI.ContainerChild) => {
       for (const tile of tiles) {
          const pos = tile.getIndexPos();
-         const text = new PIXI.Text({ style: FONT_STYLE, text: `${pos.row}, ${pos.col}` });
+         const text = new PIXI.Text({ style: font, text: `${pos.row}, ${pos.col}` });
          text.resolution = 2;
          const { x, y } = tile.sprite;
          text.position.set(x - 18, y - 18);
+         text.zIndex = ZLayer.mid;
          game.addChild(text);
       }
    };

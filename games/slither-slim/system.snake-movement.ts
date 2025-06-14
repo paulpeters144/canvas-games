@@ -1,3 +1,4 @@
+import { collide } from "games/util/util";
 import type * as PIXI from "pixi.js";
 import type { GameTiles } from "./background-tiles";
 import { bus } from "./main";
@@ -46,14 +47,14 @@ export const snakeMovementSystem = (props: SnakeMovementSystemProps): SnakeMovem
 
    let waitTime = 0;
    const headCollides = (tick: PIXI.Ticker) => {
-      if (waitTime < 1000) {
+      if (waitTime < 2500) {
          waitTime += tick.elapsedMS;
          return;
       }
 
       for (let i = 0; i < snake.body.length; i++) {
          const segment = snake.body[i];
-         if (snake.head.collides(segment)) {
+         if (collide.circles(snake.head.sprite, segment.sprite)) {
             return true;
          }
       }
@@ -62,6 +63,7 @@ export const snakeMovementSystem = (props: SnakeMovementSystemProps): SnakeMovem
 
    const update = (tick: PIXI.Ticker) => {
       if (headCollides(tick)) {
+         bus.fire("gameEvent", "gameOver");
       }
 
       if (!snake.head.isIdle()) return;

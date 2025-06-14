@@ -1,4 +1,4 @@
-import { maybeResize } from "games/util/util";
+import { maybeResize, resizeGame } from "games/util/util";
 import * as PIXI from "pixi.js";
 
 export async function exampleGame(app: PIXI.Application) {
@@ -19,6 +19,8 @@ export const newSceneEngine = (app: PIXI.Application) => {
 
    app.stage.addChild(game);
 
+   setTimeout(() => resizeGame(app), 0);
+
    return {
       next: async (nextScene: (game: PIXI.ContainerChild) => IScene) => {
          game.removeChildren();
@@ -28,7 +30,7 @@ export const newSceneEngine = (app: PIXI.Application) => {
 
          currentScene = nextScene(game);
          const update = (tick: PIXI.Ticker) => {
-            maybeResize({ app, game });
+            maybeResize(app);
             currentScene?.update(tick);
          };
          gameTicker = new PIXI.Ticker().add(update);

@@ -1,7 +1,9 @@
 import { eBus } from "games/util/event-bus";
-import { type Camera, createCamera, maybeResize, resizeGame } from "games/util/util";
+import { type Camera, collide, createCamera, maybeResize, resizeGame } from "games/util/util";
 import * as PIXI from "pixi.js";
+import { type Apples, loadApples } from "./apple";
 import {
+   type GameTile,
    type GameTiles,
    createGameTiles as createBackgroundTiles,
    loadTileTextures,
@@ -10,28 +12,10 @@ import type { EventMap } from "./event-map";
 import { type Snake, createSnake, loadSnakeTextures } from "./snake";
 import { type SnakeMovement, snakeMovementSystem } from "./system.snake-movement";
 
-// TODO:
-// - [ ] show default image for mobile devices
-// - [ ] remove all TODOs, they aren't needed cept here
-// - [ ] add out of bounds detection
-// - [ ] add game over loop
-// - [ ] add the zLayer to everything added to game
-
 export const BASE_PATH = "game-imgs/slither-slim";
-export const FONT_STYLE = new PIXI.TextStyle({
-   fontFamily: "GraphPix",
-   fontSize: 6,
-   fill: "#000000",
-});
-
-export const PIXEL_FON_STYLE = new PIXI.TextStyle({
-   fontFamily: "GraphPix",
-   fontSize: 8,
-   fill: "#000000",
-});
 
 export enum ZLayer {
-   bot = 0,
+   bottom = 0,
    mid = 1,
    top = 2,
 }
@@ -40,6 +24,8 @@ export enum GameState {
    paused = 0,
    play = 1,
 }
+
+let HIGH_SCORE = 0;
 
 export const bus = eBus<EventMap>();
 
@@ -108,14 +94,28 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
    let snake: Snake | undefined;
    let camera: Camera | undefined;
    let snakeMovement: SnakeMovement | undefined;
+   let apples: Apples | undefined;
    const scoreText = createScoreText();
    const pregameOverlay = createPregameOverlay();
    let state: GameState = GameState.paused;
 
    const resetGame = () => {
-      if (!snake || !gameTiles) return;
-      snakeMovement = snakeMovementSystem({ snake, gameTiles, initPos: { row: 5, col: 5 } });
+      if (!snake || !gameTiles || !apples) return;
+
+      const initSnakePos = { snake, gameTiles, initPos: { row: 5, col: 5 } };
+      snakeMovement = snakeMovementSystem(initSnakePos);
       snake.reset(game);
+      snake.addSegment(game);
+      scoreText.setScore(snake?.body.length);
+
+      apples.reset(game);
+      Array.from({ length: 12 }).map(() => addRandomApple());
+   };
+
+   const addRandomApple = () => {
+      const nextApplePos = fromOpenTiles({ gameTiles, snake, apples }).getRandomTile();
+      const pos = { x: nextApplePos.sprite.x, y: nextApplePos.sprite.y };
+      apples?.createApple({ game, pos });
    };
 
    bus.on("keyPressed", (e) => {
@@ -127,12 +127,21 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
       }
    });
 
+   bus.on("gameEvent", (e) => {
+      if (e === "gameOver" && state === GameState.play) {
+         snake?.died();
+         state = GameState.paused;
+         scoreText.setVisible(false);
+         pregameOverlay.setVisible(true);
+      }
+   });
+
    return {
       load: async () => {
          const tileTextures = await loadTileTextures();
          gameTiles = createBackgroundTiles({
             textures: tileTextures,
-            gridSize: { row: 20, col: 25 },
+            gridSize: { row: 15, col: 20 },
          });
          gameTiles.tiles.map((t) => game.addChild(t.sprite));
 
@@ -140,9 +149,11 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
          if (!snake?.head) throw new Error("snake head did not load");
          game.addChild(snake.head.sprite);
 
+         apples = await loadApples();
+
          snakeMovement = snakeMovementSystem({ snake, gameTiles, initPos: { row: 5, col: 5 } });
 
-         scoreText.addTo(game);
+         scoreText.addToApp(app);
 
          pregameOverlay.addTo(game);
 
@@ -150,14 +161,27 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
       },
 
       update: (tick: PIXI.Ticker) => {
+         if (!snake || !gameTiles || !apples) return;
+
          if (state === GameState.paused) {
             pregameOverlay.update(camera);
          }
 
          if (state === GameState.play) {
-            snake?.update(tick);
+            snake.update(tick);
             snakeMovement?.update(tick);
-            scoreText.setPos(camera?.posZero);
+            if (isOutOfBounds({ snake, bounds: gameTiles.size })) {
+               bus.fire("gameEvent", "gameOver");
+            }
+            for (const apple of apples.list()) {
+               if (collide.circles(snake.head.sprite, apple.sprite)) {
+                  const { id } = apple;
+                  apples.remove({ game, id });
+                  snake.addSegment(game);
+                  scoreText.setScore(snake?.body.length);
+                  addRandomApple();
+               }
+            }
          }
          camera?.lookAt(snake?.head.sprite.position);
       },
@@ -171,27 +195,26 @@ const createScoreText = () => {
          fontSize: 10,
          fill: "#FFFFFF",
       }),
-      text: "SCORE: 10",
+      text: "LENGTH: 0",
    });
    text.resolution = 2;
+   text.zIndex = ZLayer.top;
 
    const graphics = new PIXI.Graphics()
       .roundRect(0, 0, 100, 100, 6)
       .fill({ color: "#000000", alpha: 0.5 });
+   graphics.zIndex = ZLayer.top;
 
    const addTo = (game: PIXI.Container) => {
       game.addChild(graphics);
       game.addChild(text);
    };
 
-   const setPos = (pos: { x: number; y: number } | undefined) => {
-      if (!pos) return;
-
-      const { x, y } = pos;
-      text.position.set(x + 8, y + 5);
-      graphics.width = text.width + 5;
-      graphics.height = text.height + 5;
-      graphics.position.set(x + 4, y + 3);
+   const addToApp = (app: PIXI.Application) => {
+      app.stage.addChild(graphics);
+      app.stage.addChild(text);
+      graphics.position.set(3, 3);
+      text.position.set(7, 5);
    };
 
    const setVisible = (value: boolean) => {
@@ -201,7 +224,15 @@ const createScoreText = () => {
 
    setVisible(false);
 
-   return { addTo, setPos, setVisible };
+   const setScore = (score?: number) => {
+      const nextScore = (score || 0) + 1;
+      text.text = `LENGTH: ${nextScore}`;
+      HIGH_SCORE = Math.max(nextScore, HIGH_SCORE);
+      graphics.width = text.width + 5;
+      graphics.height = text.height + 5;
+   };
+
+   return { addTo, setVisible, setScore, addToApp };
 };
 
 const createPregameOverlay = () => {
@@ -212,21 +243,25 @@ const createPregameOverlay = () => {
    const titleText = new PIXI.Text({ style: titleTextStyle });
    titleText.resolution = 2;
    titleText.text = "SLITHER SLIM";
+   titleText.zIndex = ZLayer.top;
 
    const regTextStyle = new PIXI.TextStyle({ fontFamily, fontSize: 18, fill });
 
    const scoreText = new PIXI.Text({ style: regTextStyle });
    scoreText.resolution = 2;
-   scoreText.text = "HIGH SCORE: 0";
+   scoreText.text = `HIGH SCORE: ${HIGH_SCORE}`;
    scoreText.scale.set(0.75);
+   scoreText.zIndex = ZLayer.top;
 
    const commandText = new PIXI.Text({ style: regTextStyle });
    commandText.resolution = 2;
    commandText.text = "Press “ENTER” to begin";
+   commandText.zIndex = ZLayer.top;
 
    const graphics = new PIXI.Graphics()
       .rect(0, 0, 100, 100)
       .fill({ color: "#000000", alpha: 0.65 });
+   graphics.zIndex = ZLayer.top;
 
    const addTo = (game: PIXI.Container) => {
       game.addChild(graphics);
@@ -243,11 +278,11 @@ const createPregameOverlay = () => {
       const equalWidth = viewport.width === graphics.width;
       const equalHeight = viewport.height === graphics.height;
       if (!equalWidth || !equalHeight) {
-         graphics.width = viewport.width;
-         graphics.height = viewport.height;
+         graphics.width = viewport.width + 10;
+         graphics.height = viewport.height + 10;
       }
 
-      graphics.position.set(posZero.x, posZero.y);
+      graphics.position.set(posZero.x - 5, posZero.y - 5);
 
       const titleXOffset = viewport.width * 0.5 - titleText.width * 0.5;
       titleText.position.set(posZero.x + titleXOffset, posZero.y + 50);
@@ -264,7 +299,72 @@ const createPregameOverlay = () => {
       titleText.visible = value;
       scoreText.visible = value;
       commandText.visible = value;
+      scoreText.text = `HIGH SCORE: ${HIGH_SCORE}`;
    };
 
    return { addTo, update, setVisible };
+};
+
+const isOutOfBounds = (props: { snake: Snake; bounds: { width: number; height: number } }) => {
+   const { snake, bounds } = props;
+   const rect = {
+      x: snake.head.sprite.x,
+      y: snake.head.sprite.y,
+      width: snake.head.sprite.width,
+      height: snake.head.sprite.height,
+   };
+
+   const buffer = rect.width * 0.35;
+   if (rect.x - buffer < 0) return true;
+   if (rect.y - buffer < 0) return true;
+   if (rect.x + buffer > bounds.width) return true;
+   if (rect.y + buffer > bounds.height) return true;
+
+   return false;
+};
+
+const fromOpenTiles = ({
+   gameTiles,
+   snake,
+   apples,
+}: { gameTiles?: GameTiles; snake?: Snake; apples?: Apples }) => {
+   if (!gameTiles) throw new Error("in fromOpenTiles(), gameTiles not defined");
+   if (!snake) throw new Error("in fromOpenTiles(), snake not defined");
+   if (!apples) throw new Error("in fromOpenTiles(), apples not defined");
+
+   const openTiles: GameTile[] = [];
+   for (let i = 0; i < gameTiles.tiles.length; i++) {
+      const tile = gameTiles.tiles[i];
+      let spritesCollide = false;
+
+      for (let x = 0; x < snake.body.length; x++) {
+         if (spritesCollide) break;
+
+         const segment = snake.body[x];
+         const collision = collide.squares(segment.sprite, tile.sprite);
+         if (collision) spritesCollide = true;
+      }
+
+      const applesList = apples.list();
+      for (let x = 0; x < applesList.length; x++) {
+         if (spritesCollide) break;
+
+         const apple = applesList[x];
+         const collides = collide.squares(apple.sprite, tile.sprite);
+         if (collides) spritesCollide = true;
+      }
+
+      if (!spritesCollide) {
+         openTiles.push(tile);
+      }
+   }
+
+   const getRandomTile = () => {
+      if (openTiles.length === 0) throw new Error("empty game tiles");
+      const randIdx = Math.floor(Math.random() * openTiles.length);
+      const result = openTiles[randIdx];
+      return result;
+   };
+
+   return { getRandomTile };
 };

@@ -10,7 +10,6 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 
-// TODO: need to get the "/canvas-games/ from an env var"
 export const links: Route.LinksFunction = () => [
    { rel: "icon", href: "/canvas-games/favicon.ico", type: "image/x-icon" },
 ];

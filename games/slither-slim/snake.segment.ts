@@ -1,5 +1,6 @@
 import type { Position } from "games/util/util";
 import * as PIXI from "pixi.js";
+import { ZLayer } from "./main";
 
 export enum FaceDir {
    up = 0,
@@ -15,7 +16,6 @@ export interface SnakeSegment {
    placeAt: (pos: Position) => void;
    update: (tick: PIXI.Ticker) => void;
    isIdle: () => boolean;
-   collides: (segment: SnakeSegment) => boolean;
    direction: {
       faceUp: () => void;
       faceRight: () => void;
@@ -34,6 +34,7 @@ export const createSegment = (texture: PIXI.Texture): SnakeSegment => {
    const nextPos: Position = { x: 0, y: 0 };
 
    const sprite = new PIXI.Sprite(texture);
+   sprite.zIndex = ZLayer.mid;
 
    sprite.scale.set(0.2);
    sprite.anchor.set(0.5);
@@ -75,7 +76,7 @@ export const createSegment = (texture: PIXI.Texture): SnakeSegment => {
    };
 
    const update = (tick: PIXI.Ticker) => {
-      const speed = 0.12;
+      const speed = 0.125;
       if (isIdle()) return;
 
       if (sprite.y > nextPos.y) {
@@ -96,31 +97,10 @@ export const createSegment = (texture: PIXI.Texture): SnakeSegment => {
       }
    };
 
-   const collides = (segment: SnakeSegment) => {
-      const buffer = 8;
-      const selfCircle = {
-         x: sprite.x,
-         y: sprite.y,
-         radius: sprite.width * 0.5 - buffer,
-      };
-      const nextCircle = {
-         x: segment.sprite.x,
-         y: segment.sprite.y,
-         radius: segment.sprite.width * 0.5,
-      };
-
-      const dx = selfCircle.x - nextCircle.x;
-      const dy = selfCircle.y - nextCircle.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      return distance < selfCircle.radius + nextCircle.radius;
-   };
-
    return {
       nextPos,
       direction,
       moveTo,
-      collides,
       placeAt,
       sprite,
       update,

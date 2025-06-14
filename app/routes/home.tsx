@@ -17,7 +17,7 @@ const games = [
    {
       id: "slither-slim-id",
       title: "Slither Slim",
-      image: "game-imgs/space-game.png",
+      image: "game-imgs/slither-slim/game-img.png",
       init: createSlitherSlimGame,
    },
    {

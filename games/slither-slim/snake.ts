@@ -14,6 +14,7 @@ export interface Snake {
    update: (tick: PIXI.Ticker) => void;
    addSegment: (game: PIXI.ContainerChild) => void;
    reset: (game: PIXI.ContainerChild) => void;
+   died: () => void;
 }
 
 export const createSnake = (props: createSnakeProps): Snake => {
@@ -29,6 +30,7 @@ export const createSnake = (props: createSnakeProps): Snake => {
    };
 
    const reset = (game: PIXI.ContainerChild) => {
+      head.sprite.texture = headAsset;
       body.map((s) => {
          game.removeChild(s.sprite);
          s.sprite.destroy();
@@ -51,10 +53,15 @@ export const createSnake = (props: createSnakeProps): Snake => {
       game.addChild(newSegment.sprite);
    };
 
+   const died = () => {
+      head.sprite.texture = deadAsset;
+   };
+
    return {
       head,
       body,
       update,
+      died,
       addSegment,
       reset,
    };
