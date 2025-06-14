@@ -64,20 +64,22 @@ export const createHead = (texture: PIXI.Texture): Head => {
    };
 
    const update = (tick: PIXI.Ticker) => {
-      const speed = 0.25;
-      if (direction.isFacing.up() && sprite.y > nextPos.y) {
+      const speed = 0.12;
+      if (isIdle()) return;
+
+      if (direction.isFacing.up()) {
          sprite.y -= speed * tick.deltaMS;
          if (sprite.y < nextPos.y) sprite.y = nextPos.y;
       }
-      if (direction.isFacing.right() && sprite.x < nextPos.x) {
+      if (direction.isFacing.right()) {
          sprite.x += speed * tick.deltaMS;
          if (sprite.x > nextPos.x) sprite.x = nextPos.x;
       }
-      if (direction.isFacing.down() && sprite.y < nextPos.y) {
+      if (direction.isFacing.down()) {
          sprite.y += speed * tick.deltaMS;
          if (sprite.y > nextPos.y) sprite.y = nextPos.y;
       }
-      if (direction.isFacing.left() && sprite.x > nextPos.x) {
+      if (direction.isFacing.left()) {
          sprite.x -= speed * tick.deltaMS;
          if (sprite.x < nextPos.x) sprite.x = nextPos.x;
       }

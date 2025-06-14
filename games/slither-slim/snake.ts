@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { BASE_PATH } from "./main";
-import { type Head, createHead } from "./snake.head";
+import { type SnakeSegment, createSegment } from "./snake.segment";
 
 interface createSnakeProps {
    head: PIXI.Texture;
@@ -9,21 +9,35 @@ interface createSnakeProps {
 }
 
 export interface Snake {
-   head: Head;
-   update: (_tick: PIXI.Ticker) => void;
+   head: SnakeSegment;
+   body: SnakeSegment[];
+   update: (tick: PIXI.Ticker) => void;
+   addSegment: (game: PIXI.ContainerChild) => void;
 }
 
 export const createSnake = (props: createSnakeProps): Snake => {
    const { head: headAsset, dead: deadAsset, body: bodyAsset } = props;
-   const head = createHead(headAsset);
+   const head = createSegment(headAsset);
+   const body: SnakeSegment[] = [];
 
    const update = (tick: PIXI.Ticker) => {
       head.update(tick);
+      for (let i = 0; i < body.length; i++) {
+         body[i].update(tick);
+      }
+   };
+
+   const addSegment = (game: PIXI.ContainerChild) => {
+      const newSegment = createSegment(bodyAsset);
+      body.push(newSegment);
+      game.addChild(newSegment.sprite);
    };
 
    return {
       head,
+      body,
       update,
+      addSegment,
    };
 };
 
