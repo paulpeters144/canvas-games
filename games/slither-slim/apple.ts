@@ -1,6 +1,6 @@
-import type { Position } from "games/util/util";
 import * as PIXI from "pixi.js";
 import { BASE_PATH, ZLayer } from "./main";
+import type { Position } from "./types";
 
 export interface Apples {
    list: () => Apple[];

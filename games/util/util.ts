@@ -34,36 +34,3 @@ export const maybeResize = (app: PIXI.Application) => {
       }
    } catch (_) {}
 };
-
-export const lookAt = (props: {
-   sprite?: PIXI.Sprite;
-   app: PIXI.Application;
-   game: PIXI.ContainerChild;
-}) => {
-   if (!props.sprite) return;
-
-   const { sprite, game, app } = props;
-
-   const viewport = {
-      width: app.screen.width / GAME_SCALE,
-      height: app.screen.height / GAME_SCALE,
-   };
-
-   game.position.set(-sprite.x + viewport.width * 0.5, -sprite.y + viewport.height * 0.5);
-
-   const minX = -(game.width - viewport.width);
-   if (game.position.x < minX) {
-      game.position.set(minX, game.position.y);
-   }
-   const minY = -(game.height - viewport.height);
-   if (game.position.y < minY) {
-      game.position.set(game.position.x, minY);
-   }
-
-   if (game.position.x > 0) {
-      game.position.set(0, game.position.y);
-   }
-   if (game.position.y > 0) {
-      game.position.set(game.position.x, 0);
-   }
-};
