@@ -194,6 +194,8 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
       height: window.innerHeight,
    });
 
+   const isSmallScreen = window.innerWidth < 768 || isMobileDevice();
+
    useEffect(() => {
       const handleResize = () => {
          setWindowDimensions({
@@ -234,7 +236,7 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
             appRef.current = null;
          }
       };
-   }, [createGame]);
+   }, [createGame, isMobileDevice]);
 
    const toggleFullscreen = () => {
       if (!document.fullscreenElement) {
@@ -258,7 +260,7 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
             style={{
                maxWidth: isFullscreen ? `${maxWidthBasedOnHeight}px` : undefined,
             }}
-            className={cn("aspect-[16/9] relative z-10 w-[90vw] rounded-lg shadow-lg", {
+            className={cn("aspect-[16/9] relative bg-gray-800 z-10 w-[90vw] rounded-lg shadow-lg", {
                "w-full max-w-full": isFullscreen,
             })}
          >
@@ -281,7 +283,16 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
                </div>
             )}
 
-            <div ref={containerRef} className="w-full h-full overflow-hidden rounded" />
+            {isSmallScreen && (
+               <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-center p-4 rounded">
+                  <p className="text-lg font-medium">
+                     Thanks for visiting! The games aren’t mobile-friendly yet.
+                  </p>
+               </div>
+            )}
+            {!isSmallScreen && (
+               <div ref={containerRef} className="w-full h-full overflow-hidden rounded" />
+            )}
          </div>
       </div>
    );
@@ -378,4 +389,8 @@ function usePreventArrowScroll() {
          window.removeEventListener("keydown", handleKeyDown);
       };
    }, []);
+}
+
+function isMobileDevice() {
+   return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }

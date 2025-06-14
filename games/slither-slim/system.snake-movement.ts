@@ -44,8 +44,35 @@ export const snakeMovementSystem = (props: SnakeMovementSystemProps): SnakeMovem
       }
    });
 
-   const update = (_: PIXI.Ticker) => {
+   let waitTime = 0;
+   const headCollides = (tick: PIXI.Ticker) => {
+      if (waitTime < 1000) {
+         waitTime += tick.elapsedMS;
+         return;
+      }
+
+      for (let i = 0; i < snake.body.length; i++) {
+         const segment = snake.body[i];
+         if (snake.head.collides(segment)) {
+            return true;
+         }
+      }
+      return false;
+   };
+
+   const update = (tick: PIXI.Ticker) => {
+      if (headCollides(tick)) {
+      }
+
       if (!snake.head.isIdle()) return;
+
+      let prevSegment = snake.head;
+      for (let i = 0; i < snake.body.length; i++) {
+         const { x, y } = prevSegment.sprite;
+         const segment = snake.body[i];
+         segment.moveTo({ x, y });
+         prevSegment = segment;
+      }
 
       nextPos = { ...queuePos };
 
@@ -79,8 +106,7 @@ const place = (snake: Snake) => {
       const at = (cords: { row: number; col: number }) => {
          const { row, col } = cords;
          const { x, y } = gameTiles.getTileFromIndexPos({ row, col }).sprite;
-         const props = { pos: { x, y }, idxPos: cords };
-         snake.head.placeAt(props);
+         snake.head.placeAt({ x, y });
       };
       return { at };
    };
@@ -97,38 +123,33 @@ const move = (snake: Snake) => {
          const cordsInsideColBounds = col < gameTiles.sizeIdx.col && col >= 0;
          if (cordsInsideRowBounds && cordsInsideColBounds) {
             const { x, y } = gameTiles.getTileFromIndexPos(cords).sprite;
-            const props = { pos: { x, y }, idxPos: cords };
-            snake.head.moveTo(props);
+            snake.head.moveTo({ x, y });
          }
 
          if (col < 0) {
             const { y } = gameTiles.getTileFromIndexPos({ row, col: 0 }).sprite;
             const xPos = -gameTiles.tiles[0].sprite.width;
-            const props = { pos: { x: xPos, y }, idxPos: cords };
-            snake.head.moveTo(props);
+            snake.head.moveTo({ x: xPos, y });
          }
 
          if (row < 0) {
             const { x } = gameTiles.getTileFromIndexPos({ row: 0, col }).sprite;
             const yPos = -gameTiles.tiles[0].sprite.height;
-            const props = { pos: { x, y: yPos }, idxPos: cords };
-            snake.head.moveTo(props);
+            snake.head.moveTo({ x, y: yPos });
          }
 
          if (row >= gameTiles.sizeIdx.row) {
             const maxRow = gameTiles.sizeIdx.row - 1;
             const { x, y } = gameTiles.getTileFromIndexPos({ row: maxRow, col }).sprite;
             const yPos = y + gameTiles.tiles[0].sprite.height;
-            const props = { pos: { x, y: yPos }, idxPos: cords };
-            snake.head.moveTo(props);
+            snake.head.moveTo({ x, y: yPos });
          }
 
          if (col >= gameTiles.sizeIdx.col) {
             const maxCol = gameTiles.sizeIdx.col - 1;
             const { x, y } = gameTiles.getTileFromIndexPos({ row, col: maxCol }).sprite;
             const xPos = x + gameTiles.tiles[0].sprite.width;
-            const props = { pos: { x: xPos, y }, idxPos: cords };
-            snake.head.moveTo(props);
+            snake.head.moveTo({ x: xPos, y });
          }
       };
       return { to };

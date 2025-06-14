@@ -13,6 +13,7 @@ export interface Snake {
    body: SnakeSegment[];
    update: (tick: PIXI.Ticker) => void;
    addSegment: (game: PIXI.ContainerChild) => void;
+   reset: (game: PIXI.ContainerChild) => void;
 }
 
 export const createSnake = (props: createSnakeProps): Snake => {
@@ -27,8 +28,25 @@ export const createSnake = (props: createSnakeProps): Snake => {
       }
    };
 
+   const reset = (game: PIXI.ContainerChild) => {
+      body.map((s) => {
+         game.removeChild(s.sprite);
+         s.sprite.destroy();
+      });
+      body.length = 0;
+   };
+
    const addSegment = (game: PIXI.ContainerChild) => {
       const newSegment = createSegment(bodyAsset);
+
+      if (body.length === 0) {
+         const { x, y } = head.sprite;
+         newSegment.placeAt({ x, y });
+      } else {
+         const { x, y } = body[body.length - 1].sprite;
+         newSegment.placeAt({ x, y });
+      }
+
       body.push(newSegment);
       game.addChild(newSegment.sprite);
    };
@@ -38,6 +56,7 @@ export const createSnake = (props: createSnakeProps): Snake => {
       body,
       update,
       addSegment,
+      reset,
    };
 };
 

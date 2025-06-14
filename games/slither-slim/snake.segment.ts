@@ -1,4 +1,4 @@
-import type { IndexPos, Position } from "games/util/util";
+import type { Position } from "games/util/util";
 import * as PIXI from "pixi.js";
 
 export enum FaceDir {
@@ -9,16 +9,13 @@ export enum FaceDir {
 }
 
 export interface SnakeSegment {
-   indexPos: {
-      prev: IndexPos;
-      next: IndexPos;
-   };
    nextPos: Position;
    sprite: PIXI.Sprite;
-   moveTo: (props: { pos: Position; idxPos: IndexPos }) => void;
-   placeAt: (props: { pos: Position; idxPos: IndexPos }) => void;
+   moveTo: (pos: Position) => void;
+   placeAt: (pos: Position) => void;
    update: (tick: PIXI.Ticker) => void;
    isIdle: () => boolean;
+   collides: (segment: SnakeSegment) => boolean;
    direction: {
       faceUp: () => void;
       faceRight: () => void;
@@ -35,8 +32,6 @@ export interface SnakeSegment {
 
 export const createSegment = (texture: PIXI.Texture): SnakeSegment => {
    const nextPos: Position = { x: 0, y: 0 };
-   const nextIdxPos: IndexPos = { row: 0, col: 0 };
-   const currIdxPos: IndexPos = { row: 0, col: 0 };
 
    const sprite = new PIXI.Sprite(texture);
 
@@ -66,58 +61,66 @@ export const createSegment = (texture: PIXI.Texture): SnakeSegment => {
 
    const isIdle = () => sprite.x === nextPos.x && sprite.y === nextPos.y;
 
-   const moveTo = (props: { pos: Position; idxPos: IndexPos }) => {
-      nextPos.x = props.pos.x;
-      nextPos.y = props.pos.y;
-
-      currIdxPos.row = nextIdxPos.row;
-      currIdxPos.col = nextIdxPos.col;
-
-      nextIdxPos.row = props.idxPos.row;
-      nextIdxPos.col = props.idxPos.col;
+   const moveTo = (pos: Position) => {
+      nextPos.x = pos.x;
+      nextPos.y = pos.y;
    };
 
-   const placeAt = (props: { pos: Position; idxPos: IndexPos }) => {
-      nextPos.x = props.pos.x;
-      nextPos.y = props.pos.y;
+   const placeAt = (pos: Position) => {
+      nextPos.x = pos.x;
+      nextPos.y = pos.y;
 
-      currIdxPos.row = nextIdxPos.row;
-      currIdxPos.col = nextIdxPos.col;
-
-      nextIdxPos.row = props.idxPos.row;
-      nextIdxPos.col = props.idxPos.col;
-
-      sprite.x = props.pos.x;
-      sprite.y = props.pos.y;
+      sprite.x = pos.x;
+      sprite.y = pos.y;
    };
 
    const update = (tick: PIXI.Ticker) => {
       const speed = 0.12;
       if (isIdle()) return;
 
-      if (direction.isFacing.up()) {
+      if (sprite.y > nextPos.y) {
          sprite.y -= speed * tick.deltaMS;
          if (sprite.y < nextPos.y) sprite.y = nextPos.y;
       }
-      if (direction.isFacing.right()) {
+      if (sprite.x < nextPos.x) {
          sprite.x += speed * tick.deltaMS;
          if (sprite.x > nextPos.x) sprite.x = nextPos.x;
       }
-      if (direction.isFacing.down()) {
+      if (sprite.y < nextPos.y) {
          sprite.y += speed * tick.deltaMS;
          if (sprite.y > nextPos.y) sprite.y = nextPos.y;
       }
-      if (direction.isFacing.left()) {
+      if (sprite.x > nextPos.x) {
          sprite.x -= speed * tick.deltaMS;
          if (sprite.x < nextPos.x) sprite.x = nextPos.x;
       }
    };
 
+   const collides = (segment: SnakeSegment) => {
+      const buffer = 8;
+      const selfCircle = {
+         x: sprite.x,
+         y: sprite.y,
+         radius: sprite.width * 0.5 - buffer,
+      };
+      const nextCircle = {
+         x: segment.sprite.x,
+         y: segment.sprite.y,
+         radius: segment.sprite.width * 0.5,
+      };
+
+      const dx = selfCircle.x - nextCircle.x;
+      const dy = selfCircle.y - nextCircle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      return distance < selfCircle.radius + nextCircle.radius;
+   };
+
    return {
       nextPos,
-      indexPos: { next: nextIdxPos, prev: currIdxPos },
       direction,
       moveTo,
+      collides,
       placeAt,
       sprite,
       update,
