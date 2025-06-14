@@ -286,7 +286,8 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
             {isSmallScreen && (
                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-center p-4 rounded">
                   <p className="text-lg font-medium">
-                     Thanks for visiting! The games aren’t mobile-friendly yet.
+                     Uh oh... looks like you're on mobile. Only can play the games on a desktop for
+                     now.
                   </p>
                </div>
             )}
