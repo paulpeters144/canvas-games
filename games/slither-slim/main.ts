@@ -9,22 +9,12 @@ import {
    loadTileTextures,
 } from "./background-tiles";
 import { type Camera, createCamera } from "./camera";
+import { GameState, ZLayer } from "./enum";
 import type { EventMap } from "./event-map";
 import { type Snake, createSnake, loadSnakeTextures } from "./snake";
 import { type SnakeMovement, snakeMovementSystem } from "./system.snake-movement";
 
 export const BASE_PATH = "game-imgs/slither-slim";
-
-export enum ZLayer {
-   bottom = 0,
-   mid = 1,
-   top = 2,
-}
-
-export enum GameState {
-   paused = 0,
-   play = 1,
-}
 
 let HIGH_SCORE = 0;
 

@@ -1,4 +1,4 @@
-import { GAME_SCALE } from "games/util/util";
+import { BASE_GAME_SCALE } from "games/util/util";
 import type * as PIXI from "pixi.js";
 
 interface CameraProps {
@@ -30,8 +30,8 @@ export const createCamera = (props: CameraProps): Camera => {
    const lookAt = (pos?: { x: number; y: number }) => {
       if (!pos) return;
 
-      viewport.width = app.screen.width / GAME_SCALE;
-      viewport.height = app.screen.height / GAME_SCALE;
+      viewport.width = app.screen.width / BASE_GAME_SCALE;
+      viewport.height = app.screen.height / BASE_GAME_SCALE;
 
       let xPos = -pos.x + viewport.width * 0.5;
       let yPos = -pos.y + viewport.height * 0.5;

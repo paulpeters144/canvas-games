@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
-import { BASE_PATH, ZLayer } from "./main";
+import { ZLayer } from "./enum";
+import { BASE_PATH } from "./main";
 
 export interface GameTiles {
    tiles: GameTile[];

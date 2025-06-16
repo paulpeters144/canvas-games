@@ -1,5 +1,5 @@
+import * as GAME from "games";
 import { exampleGame } from "games/placeholder/main";
-import { createSlitherSlimGame } from "games/slither-slim/main";
 import * as PIXI from "pixi.js";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -15,16 +15,16 @@ export function meta({}: Route.MetaArgs) {
 
 const games = [
    {
-      id: "slither-slim-id",
+      id: "slither-slim",
       title: "Slither Slim",
       image: "game-imgs/slither-slim/game-img.png",
-      init: createSlitherSlimGame,
+      init: GAME.createSlitherSlimGame,
    },
    {
-      id: "placeholder2",
-      title: "Placeholder",
+      id: "bitcoin-sim",
+      title: "Bitcoin Network Sim",
       image: "game-imgs/space-game.png",
-      init: exampleGame,
+      init: GAME.createBtcNetworkSim,
    },
    {
       id: "placeholder3",

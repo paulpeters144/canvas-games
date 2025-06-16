@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { ZLayer } from "./main";
+import { ZLayer } from "./enum";
 import type { Position } from "./types";
 
 export enum FaceDir {
