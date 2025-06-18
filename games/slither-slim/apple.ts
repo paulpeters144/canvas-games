@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { ZLayer } from "./enum";
-import { BASE_PATH } from "./main";
+import { ASSET_SCALE, BASE_PATH } from "./main";
 import type { Position } from "./types";
 
 export interface Apples {
@@ -17,7 +17,7 @@ export const createApples = (texture: PIXI.Texture): Apples => {
       const sprite = new PIXI.Sprite(texture);
       sprite.zIndex = ZLayer.bottom;
 
-      sprite.scale.set(0.15);
+      sprite.scale.set(ASSET_SCALE);
       sprite.anchor.set(0.5);
 
       sprite.x = pos.x;
@@ -65,6 +65,7 @@ export interface Apple {
 
 export const loadApples = async (): Promise<Apples> => {
    const appleAsset = await PIXI.Assets.load(`${BASE_PATH}/apple.png`);
+   appleAsset.source.scaleMode = "nearest";
    const apples = createApples(appleAsset);
    return apples;
 };

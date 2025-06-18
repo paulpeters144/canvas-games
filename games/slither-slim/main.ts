@@ -17,6 +17,7 @@ import { type SnakeMovement, snakeMovementSystem } from "./system.snake-movement
 export const BASE_PATH = "game-imgs/slither-slim";
 
 let HIGH_SCORE = 0;
+export const ASSET_SCALE = 3.25;
 
 export const bus = eBus<EventMap>();
 
@@ -129,9 +130,9 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
 
    return {
       load: async () => {
-         const tileTextures = await loadTileTextures();
+         const tileTexture = await loadTileTextures();
          gameTiles = createBackgroundTiles({
-            textures: tileTextures,
+            texture: tileTexture,
             gridSize: { row: 15, col: 20 },
          });
          gameTiles.tiles.map((t) => game.addChild(t.sprite));

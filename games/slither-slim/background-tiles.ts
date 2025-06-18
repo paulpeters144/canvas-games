@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { ZLayer } from "./enum";
-import { BASE_PATH } from "./main";
+import { ASSET_SCALE, BASE_PATH } from "./main";
 
 export interface GameTiles {
    tiles: GameTile[];
@@ -12,11 +12,11 @@ export interface GameTiles {
 }
 
 interface CreateGameProps {
-   textures: PIXI.Texture[];
+   texture: PIXI.Texture;
    gridSize: { row: number; col: number };
 }
 
-export const createGameTiles = ({ gridSize, textures }: CreateGameProps): GameTiles => {
+export const createGameTiles = ({ gridSize, texture }: CreateGameProps): GameTiles => {
    const tiles: GameTile[] = [];
    const { row, col } = gridSize;
 
@@ -27,11 +27,9 @@ export const createGameTiles = ({ gridSize, textures }: CreateGameProps): GameTi
    });
 
    for (let i = 0; i < row * col; i++) {
-      const randomIndex = Math.floor(Math.random() * textures.length);
-      const texture = textures[randomIndex];
       const sprite = new PIXI.Sprite(texture);
 
-      sprite.scale.set(0.25);
+      sprite.scale.set(ASSET_SCALE);
       sprite.anchor.set(0.5, 0.5);
 
       const rowIdx = Math.floor(i / col);
@@ -112,10 +110,9 @@ const createGameTile = (sprite: PIXI.Sprite): GameTile => {
    return { sprite, getIndexPos };
 };
 
-export const loadTileTextures = async (): Promise<PIXI.Texture[]> => {
-   const arr = Array.from({ length: 5 });
-   const loadAsset = (str: string): Promise<PIXI.Texture> => PIXI.Assets.load(str);
-   const promises = arr.map((_, idx) => loadAsset(`${BASE_PATH}/box-${idx}.png`));
-   const assets = await Promise.all(promises);
-   return assets;
+export const loadTileTextures = async (): Promise<PIXI.Texture> => {
+   const assetPath = `${BASE_PATH}/game-tile.png`;
+   const texture = await PIXI.Assets.load(assetPath);
+   texture.source.scaleMode = "nearest";
+   return texture;
 };

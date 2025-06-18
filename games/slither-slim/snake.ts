@@ -69,7 +69,7 @@ export const createSnake = (props: createSnakeProps): Snake => {
 
 export const loadSnakeTextures = async () => {
    const snakeHeadAsset: Promise<PIXI.Texture> = PIXI.Assets.load(`${BASE_PATH}/snake-head.png`);
-   const snakeDeadAsset: Promise<PIXI.Texture> = PIXI.Assets.load(`${BASE_PATH}/dead-snake.png`);
+   const snakeDeadAsset: Promise<PIXI.Texture> = PIXI.Assets.load(`${BASE_PATH}/snake-dead.png`);
    const segmentAsset: Promise<PIXI.Texture> = PIXI.Assets.load(`${BASE_PATH}/snake-body.png`);
    const assets = await Promise.all([snakeHeadAsset, snakeDeadAsset, segmentAsset]);
 

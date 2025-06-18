@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import { ZLayer } from "./enum";
+import { ASSET_SCALE } from "./main";
 import type { Position } from "./types";
 
 export enum FaceDir {
@@ -36,7 +37,7 @@ export const createSegment = (texture: PIXI.Texture): SnakeSegment => {
    const sprite = new PIXI.Sprite(texture);
    sprite.zIndex = ZLayer.mid;
 
-   sprite.scale.set(0.2);
+   sprite.scale.set(ASSET_SCALE);
    sprite.anchor.set(0.5);
 
    const direction = {
