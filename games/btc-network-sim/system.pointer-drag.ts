@@ -31,14 +31,6 @@ export const createDragSystem = (props: DragSystemProps): DragSystem => {
       isDragging = true;
       dragStartPointer = event.global.clone();
       dragStartFocus = { ...focusPoint };
-      console.log("focusPoint", focusPoint);
-      console.log("screen.stats", { x: app.screen.width, y: app.screen.height });
-      console.log("game.stats", {
-         x: game.x,
-         y: game.y,
-         width: game.width,
-         height: game.height,
-      });
       game.cursor = "grabbing";
    });
 
@@ -73,7 +65,9 @@ export const createDragSystem = (props: DragSystemProps): DragSystem => {
    game.on("pointerup", endDrag);
    game.on("pointerupoutside", endDrag);
 
-   const getFocusPoint = () => focusPoint;
+   const getFocusPoint = () => {
+      return focusPoint;
+   };
    const setFocusPoint = (pos?: Position) => {
       if (!pos) return;
       focusPoint = pos;

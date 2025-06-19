@@ -82,7 +82,6 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
             break;
       }
       gameResizer.resize(app, game);
-      zoomCtrl?.updatePos(app);
    });
 
    return {
