@@ -2,13 +2,22 @@ import type * as PIXI from "pixi.js";
 import { gameScaler } from "./camera";
 import type { Position } from "./types";
 
-export const createDragSystem = ({
-   game,
-   size,
-}: { game: PIXI.ContainerChild; size: { width: number; height: number } }) => {
+interface DragSystemProps {
+   app: PIXI.Application;
+   game: PIXI.ContainerChild;
+   bounds: { width: number; height: number };
+}
+
+export interface DragSystem {
+   getFocusPoint: () => Position;
+   setFocusPoint: (pos?: Position) => void;
+}
+
+export const createDragSystem = (props: DragSystemProps): DragSystem => {
+   const { game, app, bounds } = props;
    let focusPoint: Position = {
-      x: gameScaler.virtWidth * 0.5,
-      y: gameScaler.virtHeight * 0.5,
+      x: app.screen.width * 0.5,
+      y: app.screen.height * 0.5,
    };
 
    let isDragging = false;
@@ -22,6 +31,14 @@ export const createDragSystem = ({
       isDragging = true;
       dragStartPointer = event.global.clone();
       dragStartFocus = { ...focusPoint };
+      console.log("focusPoint", focusPoint);
+      console.log("screen.stats", { x: app.screen.width, y: app.screen.height });
+      console.log("game.stats", {
+         x: game.x,
+         y: game.y,
+         width: game.width,
+         height: game.height,
+      });
       game.cursor = "grabbing";
    });
 
@@ -32,18 +49,18 @@ export const createDragSystem = ({
       const dx = currentPointer.x - dragStartPointer.x;
       const dy = currentPointer.y - dragStartPointer.y;
 
-      const scale = gameScaler.getBaseScale() ?? 1;
-
       focusPoint = {
-         x: dragStartFocus.x - dx / scale,
-         y: dragStartFocus.y - dy / scale,
+         x: dragStartFocus.x - dx,
+         y: dragStartFocus.y - dy,
       };
 
-      focusPoint.x = Math.min(focusPoint.x, size.width - gameScaler.virtWidth * 0.5);
-      focusPoint.x = Math.max(focusPoint.x, gameScaler.virtWidth * 0.5);
+      const minX = bounds.width * gameScaler.getGameScale();
+      focusPoint.x = Math.min(focusPoint.x, minX - app.screen.width * 0.5);
+      focusPoint.x = Math.max(focusPoint.x, app.screen.width * 0.5);
 
-      focusPoint.y = Math.min(focusPoint.y, size.height - gameScaler.virtHeight * 0.5);
-      focusPoint.y = Math.max(focusPoint.y, gameScaler.virtHeight * 0.5);
+      const minY = bounds.height * gameScaler.getGameScale();
+      focusPoint.y = Math.min(focusPoint.y, minY - app.screen.height * 0.5);
+      focusPoint.y = Math.max(focusPoint.y, app.screen.height * 0.5);
    });
 
    const endDrag = () => {
@@ -57,6 +74,10 @@ export const createDragSystem = ({
    game.on("pointerupoutside", endDrag);
 
    const getFocusPoint = () => focusPoint;
+   const setFocusPoint = (pos?: Position) => {
+      if (!pos) return;
+      focusPoint = pos;
+   };
 
-   return { getFocusPoint };
+   return { getFocusPoint, setFocusPoint };
 };

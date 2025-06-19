@@ -202,6 +202,7 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
             width: window.innerWidth,
             height: window.innerHeight,
          });
+         window.dispatchEvent(new CustomEvent("windowResize"));
       };
 
       window.addEventListener("resize", handleResize);
@@ -260,9 +261,12 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
             style={{
                maxWidth: isFullscreen ? `${maxWidthBasedOnHeight}px` : undefined,
             }}
-            className={cn("aspect-[16/9] relative bg-gray-800 z-10 w-[90vw] rounded-lg shadow-lg", {
-               "w-full max-w-full": isFullscreen,
-            })}
+            className={cn(
+               "aspect-[16/9] relative bg-gray-800 z-10 w-[90vw] max-w-[1920px] rounded-lg shadow-lg",
+               {
+                  "w-full max-w-full": isFullscreen,
+               },
+            )}
          >
             {!isFullscreen && (
                <div>
@@ -283,17 +287,17 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
                </div>
             )}
 
-            {isSmallScreen && (
+            {/* {isSmallScreen && (
                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-center p-4 rounded">
                   <p className="text-lg font-medium">
                      Uh oh... looks like you're on mobile. Only can play the games on a desktop for
                      now.
                   </p>
                </div>
-            )}
-            {!isSmallScreen && (
-               <div ref={containerRef} className="w-full h-full overflow-hidden rounded" />
-            )}
+            )} */}
+            {/* {!isSmallScreen && ( */}
+            <div ref={containerRef} className="w-full h-full overflow-hidden rounded" />
+            {/* )} */}
          </div>
       </div>
    );
