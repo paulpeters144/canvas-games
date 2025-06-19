@@ -1,12 +1,9 @@
-// TODO:
-// - [ ] the background contains a idxPos text in the middle of each tile
-// - [ ] on game resize event, the game resizes itself
-
 import { eBus } from "games/util/event-bus";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
-import { type Camera, createCamera, gameResizer } from "./camera";
+import { type Camera, createCamera } from "./camera";
 import type { EventMap } from "./event-map";
+import { type GameVars, createGameVars } from "./game.vars";
 import { createBackground } from "./model.background";
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
 import { type ZoomControl, createContextMenu, createZoomControls } from "./ui-controls";
@@ -14,8 +11,10 @@ import { type ZoomControl, createContextMenu, createZoomControls } from "./ui-co
 export const bus = eBus<EventMap>();
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
-   const sceneEngine = newSceneEngine(app);
-   sceneEngine.next((game, app) => gameScene(game, app));
+   const game: PIXI.Container = new PIXI.Container();
+   const gameVars = createGameVars(app, game);
+   const sceneEngine = newSceneEngine(gameVars);
+   sceneEngine.next(() => gameScene(gameVars));
 }
 
 export interface IScene {
@@ -23,23 +22,23 @@ export interface IScene {
    update: (tick: PIXI.Ticker) => void;
 }
 
-export const newSceneEngine = (app: PIXI.Application) => {
+export const newSceneEngine = (gameVars: GameVars) => {
    let gameTicker: PIXI.Ticker | undefined;
    let currentScene: IScene | undefined;
+   const { game, app, resizer } = gameVars;
 
-   const game: PIXI.Container = new PIXI.Container();
    app.stage.addChild(game);
 
-   setTimeout(() => gameResizer.resize(app, game), 0);
+   setTimeout(() => resizer.resize(app, game), 0);
 
    return {
-      next: async (nextScene: (game: PIXI.ContainerChild, app: PIXI.Application) => IScene) => {
+      next: async (nextScene: () => IScene) => {
          game.removeChildren();
          game.removeAllListeners();
 
          if (gameTicker) gameTicker.destroy();
 
-         currentScene = nextScene(game, app);
+         currentScene = nextScene();
          const update = (tick: PIXI.Ticker) => {
             currentScene?.update(tick);
          };
@@ -52,7 +51,9 @@ export const newSceneEngine = (app: PIXI.Application) => {
    };
 };
 
-export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): IScene => {
+export const gameScene = (gameVars: GameVars): IScene => {
+   const { game, app, resizer } = gameVars;
+
    let camera: Camera | undefined;
    let dragSystem: DragSystem | undefined;
    const assets = createGameAssets();
@@ -64,39 +65,56 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
 
    window.addEventListener("windowResize", () =>
       setTimeout(() => {
-         gameResizer.resize(app, game);
+         resizer.resize(app, game);
          zoomCtrl?.updatePos(app);
       }, 0),
    );
 
    bus.on("zoom", (e) => {
-      switch (e) {
-         case "in":
-            camera?.zoom(0.001);
-            break;
-         case "out":
-            camera?.zoom(-0.001);
-            break;
-         case "reset":
-            camera?.resetZoom();
-            break;
-      }
-      gameResizer.resize(app, game);
+      if (!dragSystem || !camera) return;
+
+      if (e === "in") camera.zoom(0.00175);
+      if (e === "out") camera.zoom(-0.00175);
+      if (e === "reset") camera.resetZoom();
+
+      const prevDimen = game.getSize();
+      resizer.resize(app, game);
+      const nextDimen = game.getSize();
+      const zoomedIn = nextDimen.height > prevDimen.height;
+
+      const largerWidth = Math.max(prevDimen.width, nextDimen.width);
+      const smallerWidth = Math.min(prevDimen.width, nextDimen.width);
+      const diffWidth = smallerWidth / largerWidth;
+
+      const largerHeight = Math.max(prevDimen.height, nextDimen.height);
+      const smallerHeight = Math.min(prevDimen.height, nextDimen.height);
+      const diffHeight = smallerHeight / largerHeight;
+
+      const dragPos = dragSystem.getFocusPoint();
+      const nextPos = {
+         x: zoomedIn ? dragPos.x / diffWidth : dragPos.x * diffWidth,
+         y: zoomedIn ? dragPos.y / diffHeight : dragPos.y * diffHeight,
+      };
+      dragSystem.setFocusPoint(nextPos);
+
+      camera?.lookAt(dragSystem?.getFocusPoint());
    });
 
    return {
       load: async () => {
          await assets.load();
          game.addChild(graphic, ...texts);
-         camera = createCamera({ app, game, bounds: size, clampCamera: true });
-         dragSystem = createDragSystem({ app, game, bounds: size });
-         zoomCtrl = createZoomControls({ app, assets });
+         camera = createCamera({ gameVars, bounds: size, clampCamera: true });
+         dragSystem = createDragSystem({ gameVars, bounds: size });
+         zoomCtrl = createZoomControls({ gameVars, assets });
          createContextMenu({ app, assets });
       },
 
       update: (tick: PIXI.Ticker) => {
          zoomCtrl?.update(tick);
-         camera?.lookAt(dragSystem?.getFocusPoint());
+         if (dragSystem?.isDragging()) {
+            camera?.lookAt(dragSystem?.getFocusPoint());
+         }
       },
    };
 };

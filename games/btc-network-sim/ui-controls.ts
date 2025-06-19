@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
 import type { GameAssets } from "./assets";
-import { gameScaler } from "./camera";
 import { ZLayer } from "./game.enums";
+import type { GameVars } from "./game.vars";
 import { bus } from "./main";
 
 interface ButtonProps {
@@ -9,7 +9,7 @@ interface ButtonProps {
 }
 
 interface ZoomControlProps {
-   app: PIXI.Application;
+   gameVars: GameVars;
    assets: GameAssets;
 }
 
@@ -18,14 +18,15 @@ export interface ZoomControl {
    updatePos: (app: PIXI.Application) => void;
 }
 
-export const createZoomControls = ({ app, assets }: ZoomControlProps): ZoomControl => {
+export const createZoomControls = ({ gameVars, assets }: ZoomControlProps): ZoomControl => {
+   const { app, scaler } = gameVars;
    const container = new PIXI.Container();
    container.zIndex = ZLayer.mid;
 
    const fontStyle = new PIXI.TextStyle({ fontFamily: "GraphPix", fontSize: 18, fill: "#FFFFFF" });
 
    const updatePos = (app: PIXI.Application) => {
-      container.scale.set(gameScaler.getBaseScale());
+      container.scale.set(scaler.getBaseScale());
       container.position.set(app.screen.width - container.width - 5, app.screen.height * 0.75);
    };
 

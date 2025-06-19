@@ -1,20 +1,21 @@
 import type * as PIXI from "pixi.js";
-import { gameScaler } from "./camera";
+import type { GameVars } from "./game.vars";
 import type { Position } from "./types";
 
 interface DragSystemProps {
-   app: PIXI.Application;
-   game: PIXI.ContainerChild;
+   gameVars: GameVars;
    bounds: { width: number; height: number };
 }
 
 export interface DragSystem {
    getFocusPoint: () => Position;
    setFocusPoint: (pos?: Position) => void;
+   isDragging: () => boolean;
 }
 
 export const createDragSystem = (props: DragSystemProps): DragSystem => {
-   const { game, app, bounds } = props;
+   const { gameVars, bounds } = props;
+   const { app, game, scaler } = gameVars;
    let focusPoint: Position = {
       x: app.screen.width * 0.5,
       y: app.screen.height * 0.5,
@@ -46,11 +47,11 @@ export const createDragSystem = (props: DragSystemProps): DragSystem => {
          y: dragStartFocus.y - dy,
       };
 
-      const minX = bounds.width * gameScaler.getGameScale();
+      const minX = bounds.width * scaler.getGameScale();
       focusPoint.x = Math.min(focusPoint.x, minX - app.screen.width * 0.5);
       focusPoint.x = Math.max(focusPoint.x, app.screen.width * 0.5);
 
-      const minY = bounds.height * gameScaler.getGameScale();
+      const minY = bounds.height * scaler.getGameScale();
       focusPoint.y = Math.min(focusPoint.y, minY - app.screen.height * 0.5);
       focusPoint.y = Math.max(focusPoint.y, app.screen.height * 0.5);
    });
@@ -68,10 +69,11 @@ export const createDragSystem = (props: DragSystemProps): DragSystem => {
    const getFocusPoint = () => {
       return focusPoint;
    };
+
    const setFocusPoint = (pos?: Position) => {
       if (!pos) return;
       focusPoint = pos;
    };
 
-   return { getFocusPoint, setFocusPoint };
+   return { getFocusPoint, setFocusPoint, isDragging: () => isDragging };
 };

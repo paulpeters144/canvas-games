@@ -1,7 +1,25 @@
 import type * as PIXI from "pixi.js";
+import type { GameVars } from "./game.vars";
 import type { Position } from "./types";
 
-const createGameScale = () => {
+export interface GameScaler {
+   getAppZeroPos: () => Position;
+   virtWidth: number;
+   virtHeight: number;
+   getBaseScale: () => number;
+   updateBaseScaleFromScreen: ({
+      screenWidth,
+      screenHeight,
+   }: {
+      screenWidth: number;
+      screenHeight: number;
+   }) => void;
+   getGameScale: () => number;
+   zoom: (value: number) => void;
+   setZoom: (value: number) => void;
+}
+
+export const createGameScale = (): GameScaler => {
    const appZeroPos: Position = { x: 0, y: 0 };
    const virtWidth = 854;
    const virtHeight = 480;
@@ -62,9 +80,11 @@ const createGameScale = () => {
    };
 };
 
-export const gameScaler = createGameScale();
+export interface GameResizer {
+   resize: (app: PIXI.Application, game: PIXI.ContainerChild) => void;
+}
 
-export const createGameResizer = () => {
+export const createGameResizer = (gameScaler: GameScaler): GameResizer => {
    return {
       resize: (app: PIXI.Application, game: PIXI.ContainerChild) => {
          const { width: screenWidth, height: screenHeight } = app.screen;
@@ -77,30 +97,27 @@ export const createGameResizer = () => {
    };
 };
 
-export const gameResizer = createGameResizer();
-
 let resizeTimer = 0;
 const RESIZE_INTERVAL_MS = 150;
-export const maybeResize = (app: PIXI.Application, game: PIXI.ContainerChild) => {
+export const maybeResize = (gameVars: GameVars) => {
    try {
+      const { app, game, resizer } = gameVars;
       resizeTimer += app.ticker.deltaMS;
 
       if (resizeTimer >= RESIZE_INTERVAL_MS) {
-         gameResizer.resize(app, game);
+         resizer.resize(app, game);
          resizeTimer = 0;
       }
    } catch (_) {}
 };
 
 interface CameraProps {
-   app: PIXI.Application;
-   game: PIXI.ContainerChild;
+   gameVars: GameVars;
    bounds: { width: number; height: number };
    clampCamera?: boolean;
 }
 
 export interface Camera {
-   getPosZero: () => Position;
    lookAt: (pos?: Position) => void;
    viewport: { width: number; height: number };
    zoom: (value: number) => void;
@@ -108,16 +125,16 @@ export interface Camera {
 }
 
 export const createCamera = (props: CameraProps): Camera => {
-   const { game, app, bounds, clampCamera = true } = props;
-   const posZero = { x: 0, y: 0 };
+   const { gameVars, bounds, clampCamera = true } = props;
+   const { app, game, scaler } = gameVars;
+
    const viewport = { width: 0, height: 0 };
 
    const zoom = (value: number) => {
-      gameScaler.zoom(value);
-      lookAt({ x: posZero.x, y: posZero.y });
+      scaler.zoom(value);
    };
 
-   const resetZoom = () => gameScaler.setZoom(1);
+   const resetZoom = () => scaler.setZoom(1);
 
    const lookAt = (pos?: { x: number; y: number }) => {
       try {
@@ -129,27 +146,20 @@ export const createCamera = (props: CameraProps): Camera => {
          let yPos = -pos.y + viewport.height * 0.5;
 
          if (clampCamera) {
-            const boundsWidth = bounds.width * gameScaler.getGameScale();
+            const boundsWidth = bounds.width * scaler.getGameScale();
             const minX = -(boundsWidth - viewport.width);
             const maxX = 0;
             xPos = Math.min(Math.max(xPos, minX), maxX);
 
-            const boundsHeight = bounds.height * gameScaler.getGameScale();
+            const boundsHeight = bounds.height * scaler.getGameScale();
             const minY = -(boundsHeight - viewport.height);
             const maxY = 0;
             yPos = Math.min(Math.max(yPos, minY), maxY);
          }
 
          game.position.set(xPos, yPos);
-
-         posZero.x = -game.position.x;
-         posZero.y = -game.position.y;
       } catch (_) {}
    };
 
-   const getPosZero = () => {
-      return { ...posZero };
-   };
-
-   return { getPosZero, lookAt, viewport, zoom, resetZoom };
+   return { lookAt, viewport, zoom, resetZoom };
 };
