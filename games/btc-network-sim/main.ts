@@ -59,7 +59,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
    const assets = createGameAssets();
    let zoomCtrl: ZoomControl | undefined;
 
-   const { graphic, size, texts } = createBackground({ rows: 25, cols: 50 });
+   const background = createBackground({ rows: 25, cols: 40 });
 
    window.addEventListener("resize", () => window.dispatchEvent(new CustomEvent("windowResize")));
 
@@ -72,9 +72,9 @@ export const gameScene = (gameVars: GameVars): IScene => {
 
    bus.on("zoom", (e) => {
       if (!dragSystem || !camera) return;
-
-      if (e === "in") camera.zoom(0.00175);
-      if (e === "out") camera.zoom(-0.00175);
+      const deltaZoom = 0.001;
+      if (e === "in") camera.zoom(deltaZoom);
+      if (e === "out") camera.zoom(-deltaZoom);
       if (e === "reset") camera.resetZoom();
 
       const prevDimen = game.getSize();
@@ -103,14 +103,15 @@ export const gameScene = (gameVars: GameVars): IScene => {
    return {
       load: async () => {
          await assets.load();
-         game.addChild(graphic, ...texts);
-         camera = createCamera({ gameVars, bounds: size, clampCamera: true });
-         dragSystem = createDragSystem({ gameVars, bounds: size });
+         game.addChild(background.graphic);
+         camera = createCamera({ gameVars, bounds: background.size, clampCamera: true });
+         dragSystem = createDragSystem({ gameVars, bounds: background.size });
          zoomCtrl = createZoomControls({ gameVars, assets });
          createContextMenu({ app, assets });
       },
 
       update: (tick: PIXI.Ticker) => {
+         camera?.update(tick);
          zoomCtrl?.update(tick);
          if (dragSystem?.isDragging()) {
             camera?.lookAt(dragSystem?.getFocusPoint());

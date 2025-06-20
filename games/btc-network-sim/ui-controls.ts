@@ -23,11 +23,11 @@ export const createZoomControls = ({ gameVars, assets }: ZoomControlProps): Zoom
    const container = new PIXI.Container();
    container.zIndex = ZLayer.mid;
 
-   const fontStyle = new PIXI.TextStyle({ fontFamily: "GraphPix", fontSize: 18, fill: "#FFFFFF" });
+   const fontStyle = new PIXI.TextStyle({ fontFamily: "GraphPix", fontSize: 14, fill: "#FFFFFF" });
 
    const updatePos = (app: PIXI.Application) => {
       container.scale.set(scaler.getBaseScale());
-      container.position.set(app.screen.width - container.width - 5, app.screen.height * 0.75);
+      container.position.set(app.screen.width - container.width - 6, app.screen.height * 0.75);
    };
 
    const createBtn = (props: ButtonProps) => {
@@ -35,7 +35,7 @@ export const createZoomControls = ({ gameVars, assets }: ZoomControlProps): Zoom
       const container = new PIXI.Container();
 
       const button = assets.createSprite("circle-btn");
-      button.scale.set(3);
+      button.scale.set(2.5);
 
       const text = new PIXI.Text({ style: fontStyle, text: char });
       text.resolution = 2;
@@ -71,10 +71,10 @@ export const createZoomControls = ({ gameVars, assets }: ZoomControlProps): Zoom
    plusBtn.ctr.position.set(0, 0);
 
    const minusBtn = createBtn({ char: "-" });
-   minusBtn.ctr.position.set(0, plusBtn.ctr.y + plusBtn.ctr.height + 1);
+   minusBtn.ctr.position.set(0, plusBtn.ctr.y + plusBtn.ctr.height + 2);
 
    const resetBtn = createBtn({ char: "↺" });
-   resetBtn.ctr.position.set(0, minusBtn.ctr.y + minusBtn.ctr.height + 1);
+   resetBtn.ctr.position.set(0, minusBtn.ctr.y + minusBtn.ctr.height + 2);
 
    container.addChild(plusBtn.ctr, minusBtn.ctr, resetBtn.ctr);
    updatePos(app);

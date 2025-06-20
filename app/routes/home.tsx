@@ -287,17 +287,17 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
                </div>
             )}
 
-            {/* {isSmallScreen && (
+            {isSmallScreen && (
                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-center p-4 rounded">
                   <p className="text-lg font-medium">
                      Uh oh... looks like you're on mobile. Only can play the games on a desktop for
                      now.
                   </p>
                </div>
-            )} */}
-            {/* {!isSmallScreen && ( */}
-            <div ref={containerRef} className="w-full h-full overflow-hidden rounded" />
-            {/* )} */}
+            )}
+            {!isSmallScreen && (
+               <div ref={containerRef} className="w-full h-full overflow-hidden rounded" />
+            )}
          </div>
       </div>
    );

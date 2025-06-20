@@ -51,10 +51,12 @@ export const createGameScale = (): GameScaler => {
 
    const zoom = (value: number) => {
       const zoomFactor = 1 + value;
-      const nextScale = dynamicScale * zoomFactor;
-
-      if (nextScale >= 0.5 && nextScale <= 1.5) {
-         dynamicScale = nextScale;
+      dynamicScale = dynamicScale * zoomFactor;
+      if (dynamicScale < 0.5) {
+         dynamicScale = 0.5;
+      }
+      if (dynamicScale > 2) {
+         dynamicScale = 2;
       }
    };
 
@@ -122,6 +124,7 @@ export interface Camera {
    viewport: { width: number; height: number };
    zoom: (value: number) => void;
    resetZoom: () => void;
+   update: (tick: PIXI.Ticker) => void;
 }
 
 export const createCamera = (props: CameraProps): Camera => {
@@ -129,9 +132,10 @@ export const createCamera = (props: CameraProps): Camera => {
    const { app, game, scaler } = gameVars;
 
    const viewport = { width: 0, height: 0 };
-
+   let zoomAmount = 0;
    const zoom = (value: number) => {
-      scaler.zoom(value);
+      zoomAmount = value;
+      // scaler.zoom(value);
    };
 
    const resetZoom = () => scaler.setZoom(1);
@@ -161,5 +165,18 @@ export const createCamera = (props: CameraProps): Camera => {
       } catch (_) {}
    };
 
-   return { lookAt, viewport, zoom, resetZoom };
+   const update = (tick: PIXI.Ticker) => {
+      if (zoomAmount !== 0) {
+         scaler.zoom(zoomAmount * tick.deltaMS);
+         zoomAmount = 0;
+      }
+   };
+
+   return {
+      lookAt,
+      viewport,
+      zoom,
+      resetZoom,
+      update,
+   };
 };
