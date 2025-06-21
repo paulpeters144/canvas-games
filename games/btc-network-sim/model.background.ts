@@ -3,7 +3,7 @@ import { ZLayer } from "./game.enums";
 
 export const createBackground = ({ rows, cols }: { rows: number; cols: number }) => {
    const gridSize = 50;
-   const fillColor = "#FCC889";
+   const fillColor = "#4E505F";
 
    const graphic = new PIXI.Graphics();
    graphic.zIndex = ZLayer.bottom;
@@ -26,7 +26,7 @@ export const createBackground = ({ rows, cols }: { rows: number; cols: number })
    }
 
    const dotRadius = 1;
-   const dotColor = "#474e6a";
+   const dotColor = "#b6cdd5";
 
    for (let row = 0; row <= rows; row++) {
       for (let col = 0; col <= cols; col++) {

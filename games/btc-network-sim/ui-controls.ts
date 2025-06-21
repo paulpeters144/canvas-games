@@ -13,6 +13,9 @@ interface ZoomControlProps {
    assets: GameAssets;
 }
 
+// TODO: create left drawer
+// figma: https://www.figma.com/design/Vx7pwMkXpedGGNTm2FK4tM/Game-Design?node-id=784-286&t=N0cxrfKTzzdamf0d-0
+
 export interface ZoomControl {
    update: (tick: PIXI.Ticker) => void;
    updatePos: (app: PIXI.Application) => void;
