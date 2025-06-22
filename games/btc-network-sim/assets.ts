@@ -2,12 +2,19 @@ import * as PIXI from "pixi.js";
 
 const BASE_PATH = "game-imgs/btc-net-sim";
 
-export const assetNames = ["circle-btn", "ctx-option"] as const;
+export const assetNames = [
+   "circle-btn",
+   "ctx-option",
+   "reset",
+   "zoom-btn-up",
+   "zoom-btn-dn",
+] as const;
 export type AssetName = (typeof assetNames)[number];
 
 export interface GameAssets {
    createSprite: (name: AssetName) => PIXI.Sprite;
    load: () => Promise<void>;
+   getTexture: (name: AssetName) => PIXI.Texture;
 }
 
 export const createGameAssets = (): GameAssets => {
@@ -27,6 +34,7 @@ export const createGameAssets = (): GameAssets => {
    };
    return {
       createSprite: (name: AssetName) => new PIXI.Sprite(textures[name]),
+      getTexture: (name: AssetName) => textures[name],
       load,
    };
 };

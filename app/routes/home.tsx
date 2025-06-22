@@ -270,12 +270,12 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
          >
             {!isFullscreen && (
                <div>
-                  <button
+                  {/* <button
                      onClick={onClose}
                      className="absolute top-2 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold cursor-pointer"
                   >
                      ✕
-                  </button>
+                  </button> */}
 
                   <button
                      onClick={toggleFullscreen}

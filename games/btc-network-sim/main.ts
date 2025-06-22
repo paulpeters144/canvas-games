@@ -2,17 +2,19 @@ import { eBus } from "games/util/event-bus";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { type Camera, createCamera } from "./camera";
+import { createContextMenu } from "./ctx-menu";
 import type { EventMap } from "./event-map";
 import { type GameVars, createGameVars } from "./game.vars";
+import { type LeftPaneCtrl, createLeftPaneControls } from "./left-pane.control";
 import { createBackground } from "./model.background";
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
-import { type ZoomControl, createContextMenu, createZoomControls } from "./ui-controls";
 
 export const bus = eBus<EventMap>();
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
-   const gameVars = createGameVars(app, game);
+   const assets = createGameAssets();
+   const gameVars = createGameVars(app, game, assets);
    const sceneEngine = newSceneEngine(gameVars);
    sceneEngine.next(() => gameScene(gameVars));
 }
@@ -52,23 +54,18 @@ export const newSceneEngine = (gameVars: GameVars) => {
 };
 
 export const gameScene = (gameVars: GameVars): IScene => {
-   const { game, app, resizer } = gameVars;
+   const { game, app, assets, resizer } = gameVars;
 
    let camera: Camera | undefined;
    let dragSystem: DragSystem | undefined;
-   const assets = createGameAssets();
-   let zoomCtrl: ZoomControl | undefined;
+   let leftPaneCtrl: LeftPaneCtrl | undefined;
 
    const background = createBackground({ rows: 25, cols: 40 });
 
    window.addEventListener("resize", () => window.dispatchEvent(new CustomEvent("windowResize")));
 
-   window.addEventListener("windowResize", () =>
-      setTimeout(() => {
-         resizer.resize(app, game);
-         zoomCtrl?.updatePos(app);
-      }, 0),
-   );
+   const windowResize = () => setTimeout(() => resizer.resize(app, game), 0);
+   window.addEventListener("windowResize", windowResize);
 
    bus.on("zoom", (e) => {
       if (!dragSystem || !camera) return;
@@ -100,19 +97,23 @@ export const gameScene = (gameVars: GameVars): IScene => {
       camera?.lookAt(dragSystem?.getFocusPoint());
    });
 
+   bus.on("node", (payload) => {
+      console.log("payload", payload);
+   });
+
    return {
       load: async () => {
          await assets.load();
          game.addChild(background.graphic);
          camera = createCamera({ gameVars, bounds: background.size, clampCamera: true });
          dragSystem = createDragSystem({ gameVars, bounds: background.size });
-         zoomCtrl = createZoomControls({ gameVars, assets });
+         leftPaneCtrl = createLeftPaneControls(gameVars);
          createContextMenu({ app, assets });
       },
 
       update: (tick: PIXI.Ticker) => {
          camera?.update(tick);
-         zoomCtrl?.update(tick);
+         leftPaneCtrl?.update(tick);
          if (dragSystem?.isDragging()) {
             camera?.lookAt(dragSystem?.getFocusPoint());
          }
