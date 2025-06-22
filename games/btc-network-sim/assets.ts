@@ -8,6 +8,12 @@ export const assetNames = [
    "reset",
    "zoom-btn-up",
    "zoom-btn-dn",
+   "ms-default",
+   "ms-grabbing",
+   "ms-grab",
+   "ms-pointer",
+   "server-anim-coin",
+   "server-off",
 ] as const;
 export type AssetName = (typeof assetNames)[number];
 

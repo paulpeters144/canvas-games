@@ -26,7 +26,7 @@ export const createDragSystem = (props: DragSystemProps): DragSystem => {
    let dragStartFocus: Position | null = null;
 
    game.eventMode = "static";
-   game.cursor = "grab";
+   // game.cursor = "grab";
 
    game.on("pointerdown", (event: PIXI.FederatedPointerEvent) => {
       isDragging = true;
@@ -60,7 +60,8 @@ export const createDragSystem = (props: DragSystemProps): DragSystem => {
       isDragging = false;
       dragStartPointer = null;
       dragStartFocus = null;
-      game.cursor = "grab";
+      game.cursor = "default";
+      // game.cursor = "grab";
    };
 
    game.on("pointerup", endDrag);

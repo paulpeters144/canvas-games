@@ -381,7 +381,7 @@ export const createLeftPaneControls = (gameVars: GameVars): LeftPaneCtrl => {
       pos: { x: 15, y: 113 },
       label: "Bad Actor Nodes",
       values: { min: 0, max: 100 },
-      disable: false,
+      disable: true,
       onChange: (value: number) => {
          bus.fire("node", { count: value, type: "bad" });
       },
@@ -417,8 +417,6 @@ export const createLeftPaneControls = (gameVars: GameVars): LeftPaneCtrl => {
    chevron.hitArea.on("pointerdown", () => setOpen(!isOpen));
 
    container.addChild(bg.ctr, chevron.ctr, btcNodeCtrl.ctr, badNodeCtrl.ctr, zoomCtrls.ctr);
-
-   container.alpha = 0.65;
 
    app.stage.addChild(container);
    handleResize(app);

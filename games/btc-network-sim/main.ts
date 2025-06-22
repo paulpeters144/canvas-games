@@ -2,14 +2,19 @@ import { eBus } from "games/util/event-bus";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { type Camera, createCamera } from "./camera";
-import { createContextMenu } from "./ctx-menu";
 import type { EventMap } from "./event-map";
 import { type GameVars, createGameVars } from "./game.vars";
-import { type LeftPaneCtrl, createLeftPaneControls } from "./left-pane.control";
-import { createBackground } from "./model.background";
+import { createBtcNode } from "./model.btc-node";
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
+import { createBackground } from "./ui.background";
+import { type LeftPaneCtrl, createLeftPaneControls } from "./ui.left-pane";
+import { setMouseImages } from "./ui.mouse";
 
 export const bus = eBus<EventMap>();
+
+// TODO:
+// - start the camera in the middle of the grid
+// - first node is created in the middle of the grid
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
@@ -62,10 +67,15 @@ export const gameScene = (gameVars: GameVars): IScene => {
 
    const background = createBackground({ rows: 25, cols: 40 });
 
-   window.addEventListener("resize", () => window.dispatchEvent(new CustomEvent("windowResize")));
+   const sendResizeEvent = () => window.dispatchEvent(new CustomEvent("windowResize"));
+   window.addEventListener("resize", () => sendResizeEvent);
 
    const windowResize = () => setTimeout(() => resizer.resize(app, game), 0);
    window.addEventListener("windowResize", windowResize);
+
+   app.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+   app.stage.interactive = true;
+   setMouseImages(app);
 
    bus.on("zoom", (e) => {
       if (!dragSystem || !camera) return;
@@ -107,8 +117,18 @@ export const gameScene = (gameVars: GameVars): IScene => {
          game.addChild(background.graphic);
          camera = createCamera({ gameVars, bounds: background.size, clampCamera: true });
          dragSystem = createDragSystem({ gameVars, bounds: background.size });
+
+         setTimeout(() => {
+            if (!dragSystem || !camera) return;
+            const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
+            dragSystem.setFocusPoint(gridCenter);
+            camera.lookAt(dragSystem?.getFocusPoint());
+            const bgSize = background.size;
+            const firstNodePos = { x: bgSize.width * 0.5, y: bgSize.height * 0.5 };
+            createBtcNode({ gameVars, assets, pos: firstNodePos });
+         }, 5);
+
          leftPaneCtrl = createLeftPaneControls(gameVars);
-         createContextMenu({ app, assets });
       },
 
       update: (tick: PIXI.Ticker) => {
