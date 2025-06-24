@@ -65,7 +65,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
    let dragSystem: DragSystem | undefined;
    let leftPaneCtrl: LeftPaneCtrl | undefined;
 
-   const background = createBackground({ rows: 30, cols: 50 });
+   const background = createBackground({ rows: 30, cols: 45 });
 
    const sendResizeEvent = () => window.dispatchEvent(new CustomEvent("windowResize"));
    window.addEventListener("resize", () => sendResizeEvent);
