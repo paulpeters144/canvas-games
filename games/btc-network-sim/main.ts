@@ -3,8 +3,8 @@ import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { type Camera, createCamera } from "./camera";
 import type { EventMap } from "./event-map";
+import { startNodeFactory } from "./factory.node";
 import { type GameVars, createGameVars } from "./game.vars";
-import { createBtcNode } from "./model.btc-node";
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
 import { createBackground } from "./ui.background";
 import { type LeftPaneCtrl, createLeftPaneControls } from "./ui.left-pane";
@@ -65,12 +65,16 @@ export const gameScene = (gameVars: GameVars): IScene => {
    let dragSystem: DragSystem | undefined;
    let leftPaneCtrl: LeftPaneCtrl | undefined;
 
-   const background = createBackground({ rows: 25, cols: 40 });
+   const background = createBackground({ rows: 30, cols: 50 });
 
    const sendResizeEvent = () => window.dispatchEvent(new CustomEvent("windowResize"));
    window.addEventListener("resize", () => sendResizeEvent);
 
-   const windowResize = () => setTimeout(() => resizer.resize(app, game), 0);
+   const windowResize = () =>
+      setTimeout(() => {
+         resizer.resize(app, game);
+         camera?.lookAt(dragSystem?.getFocusPoint());
+      }, 0);
    window.addEventListener("windowResize", windowResize);
 
    app.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -107,28 +111,34 @@ export const gameScene = (gameVars: GameVars): IScene => {
       camera?.lookAt(dragSystem?.getFocusPoint());
    });
 
-   bus.on("node", (payload) => {
-      console.log("payload", payload);
-   });
-
    return {
       load: async () => {
          await assets.load();
          game.addChild(background.graphic);
-         camera = createCamera({ gameVars, bounds: background.size, clampCamera: true });
-         dragSystem = createDragSystem({ gameVars, bounds: background.size });
+         camera = createCamera({
+            gameVars,
+            bounds: background.size,
+            clampCamera: false,
+         });
+         dragSystem = createDragSystem({
+            gameVars,
+            clamp: true,
+            bounds: background.size,
+         });
 
          setTimeout(() => {
             if (!dragSystem || !camera) return;
             const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
             dragSystem.setFocusPoint(gridCenter);
             camera.lookAt(dragSystem?.getFocusPoint());
-            const bgSize = background.size;
-            const firstNodePos = { x: bgSize.width * 0.5, y: bgSize.height * 0.5 };
-            createBtcNode({ gameVars, assets, pos: firstNodePos });
+            // const bgSize = background.size;
+            // const firstNodePos = { x: bgSize.width * 0.5, y: bgSize.height * 0.5 };
+            // createBtcNode({ gameVars, assets, pos: firstNodePos });
          }, 5);
 
          leftPaneCtrl = createLeftPaneControls(gameVars);
+
+         startNodeFactory(gameVars);
       },
 
       update: (tick: PIXI.Ticker) => {

@@ -6,18 +6,28 @@ import type { Position } from "./types";
 interface BtcNodeProps {
    assets: GameAssets;
    gameVars: GameVars;
-   pos: Position;
+   pos?: Position;
 }
 
-export const createBtcNode = (props: BtcNodeProps) => {
+export interface BtcNode {
+   id: () => string;
+   setRunning: (valueChange: boolean) => void;
+   createdAt: () => Date;
+   destroy: () => void;
+   toRect: () => PIXI.Rectangle;
+   anim: PIXI.AnimatedSprite;
+}
+
+export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    const { assets, gameVars, pos } = props;
    const { game } = gameVars;
    const createdAt = new Date();
+   const id = crypto.randomUUID().replaceAll("-", "").slice(0, 15);
 
    const width = 37;
    const height = 43;
    const frames = 5;
-   const scale = 2.115;
+   const scale = 1.25;
 
    const texture = assets.getTexture("server-anim-coin");
    const offNode = assets.createSprite("server-off");
@@ -37,14 +47,15 @@ export const createBtcNode = (props: BtcNodeProps) => {
    });
 
    const anim = new PIXI.AnimatedSprite({ textures });
-   anim.x = pos.x;
-   anim.y = pos.y;
    anim.scale.set(scale);
    anim.animationSpeed = 0.07;
    anim.play();
 
    game.addChild(anim);
    game.addChild(offNode);
+
+   anim.x = pos ? pos.x - anim.width * 0.5 : 0;
+   anim.y = pos ? pos.y - anim.height * 0.5 : 0;
 
    const setRunning = (valueChange: boolean) => {
       anim.visible = valueChange;
@@ -55,9 +66,28 @@ export const createBtcNode = (props: BtcNodeProps) => {
          : offNode.position.set(anim.x, anim.y);
    };
 
+   const destroy = () => {
+      if (anim.parent) {
+         anim.parent.removeChild(anim);
+      }
+      anim.destroy();
+
+      if (offNode.parent) {
+         offNode.parent.removeChild(offNode);
+      }
+      offNode.destroy();
+   };
+
+   const toRect = () => {
+      return new PIXI.Rectangle(anim.x, anim.y, anim.width, anim.height);
+   };
+
    return {
-      anim,
       setRunning,
+      anim,
       createdAt: () => createdAt,
+      id: () => id,
+      destroy,
+      toRect,
    };
 };

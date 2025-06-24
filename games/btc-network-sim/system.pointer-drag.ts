@@ -5,6 +5,7 @@ import type { Position } from "./types";
 interface DragSystemProps {
    gameVars: GameVars;
    bounds: { width: number; height: number };
+   clamp: boolean;
 }
 
 export interface DragSystem {
@@ -14,7 +15,7 @@ export interface DragSystem {
 }
 
 export const createDragSystem = (props: DragSystemProps): DragSystem => {
-   const { gameVars, bounds } = props;
+   const { gameVars, bounds, clamp } = props;
    const { app, game, scaler } = gameVars;
    let focusPoint: Position = {
       x: app.screen.width * 0.5,
@@ -46,6 +47,8 @@ export const createDragSystem = (props: DragSystemProps): DragSystem => {
          x: dragStartFocus.x - dx,
          y: dragStartFocus.y - dy,
       };
+
+      if (!clamp) return;
 
       const minX = bounds.width * scaler.getGameScale();
       focusPoint.x = Math.min(focusPoint.x, minX - app.screen.width * 0.5);

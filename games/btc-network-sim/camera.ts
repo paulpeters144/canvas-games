@@ -133,9 +133,9 @@ export const createCamera = (props: CameraProps): Camera => {
 
    const viewport = { width: 0, height: 0 };
    let zoomAmount = 0;
+
    const zoom = (value: number) => {
       zoomAmount = value;
-      // scaler.zoom(value);
    };
 
    const resetZoom = () => scaler.setZoom(1);
