@@ -1,4 +1,4 @@
 export type EventMap = {
    zoom: "in" | "out" | "reset";
-   node: { count: number; type: "node" | "bad" };
+   node: { count: number };
 };

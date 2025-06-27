@@ -161,9 +161,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
             const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
             systemDrag.setFocusPoint(gridCenter);
             camera.lookAt(systemDrag?.getFocusPoint());
-            // const bgSize = background.size;
-            // const firstNodePos = { x: bgSize.width * 0.5, y: bgSize.height * 0.5 };
-            // createBtcNode({ gameVars, assets, pos: firstNodePos });
+            bus.fire("node", { count: 1 });
          }, 5);
 
          leftPaneCtrl = createLeftPaneControls(gameVars);

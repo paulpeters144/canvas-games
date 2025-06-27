@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { createGameTiles } from "./background-tiles";
 
 describe("#GameTiles", async () => {
-   const textures = fakeTextures();
+   const texture = fakeTextures()[0];
 
    it("should work", () => {
-      const gameTiles = createGameTiles({ textures, gridSize: { row: 5, col: 5 } });
+      const gameTiles = createGameTiles({ texture, gridSize: { row: 5, col: 5 } });
       const { rowIdx, colIdx } = { rowIdx: 2, colIdx: 3 };
 
       const tile = gameTiles.getTileFromIndexPos({ row: rowIdx, col: colIdx });
