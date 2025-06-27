@@ -54,6 +54,7 @@ export const createNodeConnectionSystem = (props: connectionSystemProps): Connec
       while (connectLines.length > 0) {
          const line = connectLines.pop();
          if (line) game.removeChild(line);
+         line?.destroy();
       }
 
       for (const n of store.data()) n.disconnect();
