@@ -1,12 +1,19 @@
 import * as PIXI from "pixi.js";
 import type { GameVars } from "./game.vars";
-import { bus } from "./main";
 import { type BtcNode, createBtcNode } from "./model.btc-node";
 import type { Position } from "./types";
 
-export const startNodeFactory = (gameVars: GameVars) => {
+export interface NodeFactory {
+   create: (amount: number, allNodes: BtcNode[]) => BtcNode[];
+}
+
+interface nodeFactoryProps {
+   gameVars: GameVars;
+}
+
+export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
+   const { gameVars } = props;
    const { game, assets, scaler } = gameVars;
-   const factoryStore: BtcNode[] = [];
 
    const getGameSize = () => {
       return {
@@ -15,23 +22,21 @@ export const startNodeFactory = (gameVars: GameVars) => {
       };
    };
 
-   bus.on("node", (e) => {
-      if (e.count > factoryStore.length) {
-         while (e.count > factoryStore.length) {
-            const pos = getNextOpenPos(factoryStore, getGameSize());
-            const node = createBtcNode({ gameVars, assets, pos });
-            factoryStore.push(node);
-         }
+   const create = (amount: number, allNodes: BtcNode[]) => {
+      const result: BtcNode[] = [];
+      let count = 0;
+      while (count < amount) {
+         const pos = getNextOpenPos(allNodes, getGameSize());
+         const node = createBtcNode({ gameVars, assets, pos });
+         result.push(node);
+         count++;
       }
-      if (e.count < factoryStore.length) {
-         while (e.count < factoryStore.length) {
-            const node = factoryStore.pop();
-            node?.destroy();
-         }
-      }
-   });
+      return result;
+   };
 
-   setTimeout(() => bus.fire("node", { count: 1, type: "node" }), 100);
+   return {
+      create,
+   };
 };
 
 type posKey = "top" | "topLeft" | "topRight" | "bottom" | "bottomLeft" | "bottomRight";
@@ -128,10 +133,10 @@ const rectsCollide = (props: rectsCollideProps): boolean => {
 };
 
 const getNextOpenPos = (
-   factoryStore: BtcNode[],
+   store: BtcNode[],
    gameSize: { width: number; height: number },
 ): Position => {
-   if (factoryStore.length === 0) {
+   if (store.length === 0) {
       return {
          x: gameSize.width * 0.5 - 25,
          y: gameSize.height * 0.5 - 25,
@@ -140,8 +145,8 @@ const getNextOpenPos = (
 
    const nodeBuffer = 50;
 
-   for (let i = 0; i < factoryStore.length; i++) {
-      const node = factoryStore[i];
+   for (let i = 0; i < store.length; i++) {
+      const node = store[i];
       const surroundingRects = getSurroundingPos(node);
 
       const orderedKeys: posKey[] = [
@@ -160,7 +165,7 @@ const getNextOpenPos = (
          if (potentialRect.x + potentialRect.width + nodeBuffer > gameSize.width) continue;
          if (potentialRect.y + potentialRect.height + nodeBuffer > gameSize.height) continue;
 
-         const collides = factoryStore.some((n) =>
+         const collides = store.some((n) =>
             rectsCollide({
                rectA: potentialRect,
                rectB: n.toRect(),

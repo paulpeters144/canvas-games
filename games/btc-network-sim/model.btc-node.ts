@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import type { GameAssets } from "./assets";
+import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
 import type { Position } from "./types";
 
@@ -15,6 +16,9 @@ export interface BtcNode {
    createdAt: () => Date;
    destroy: () => void;
    toRect: () => PIXI.Rectangle;
+   connect: (node: BtcNode) => void;
+   disconnect: () => void;
+   connectCount: () => number;
    anim: PIXI.AnimatedSprite;
 }
 
@@ -23,6 +27,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    const { game } = gameVars;
    const createdAt = new Date();
    const id = crypto.randomUUID().replaceAll("-", "").slice(0, 15);
+   const nodeConnections = new Map<string, BtcNode>();
 
    const width = 37;
    const height = 43;
@@ -51,6 +56,8 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    anim.animationSpeed = 0.07;
    anim.play();
 
+   anim.zIndex = ZLayer.mid;
+   offNode.zIndex = ZLayer.mid;
    game.addChild(anim);
    game.addChild(offNode);
 
@@ -82,6 +89,19 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       return new PIXI.Rectangle(anim.x, anim.y, anim.width, anim.height);
    };
 
+   const connect = (node: BtcNode) => {
+      if (nodeConnections.has(node.id())) return;
+      nodeConnections.set(node.id(), node);
+   };
+
+   const disconnect = () => {
+      nodeConnections.clear();
+   };
+
+   const connectCount = () => {
+      return nodeConnections.size;
+   };
+
    return {
       setRunning,
       anim,
@@ -89,5 +109,8 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       id: () => id,
       destroy,
       toRect,
+      connect,
+      disconnect,
+      connectCount,
    };
 };

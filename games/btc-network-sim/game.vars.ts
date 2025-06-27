@@ -8,6 +8,10 @@ export interface GameVars {
    assets: GameAssets;
    resizer: GameResizer;
    scaler: GameScaler;
+   getWindowSize: () => {
+      width: number;
+      height: number;
+   };
 }
 export const createGameVars = (
    app: PIXI.Application,
@@ -15,11 +19,19 @@ export const createGameVars = (
    assets: GameAssets,
 ) => {
    const gameScaler = createGameScale();
+   const getWindowSize = () => {
+      return {
+         width: game.width / gameScaler.getGameScale(),
+         height: game.height / gameScaler.getGameScale(),
+      };
+   };
+
    return {
       app,
       game,
       assets,
       resizer: createGameResizer(gameScaler),
       scaler: gameScaler,
+      getWindowSize,
    };
 };

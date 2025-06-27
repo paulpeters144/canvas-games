@@ -3,8 +3,10 @@ import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { type Camera, createCamera } from "./camera";
 import type { EventMap } from "./event-map";
-import { startNodeFactory } from "./factory.node";
+import { type NodeFactory, createNodeFactory } from "./factory.node";
 import { type GameVars, createGameVars } from "./game.vars";
+import { type NodeStore, createNodeStore } from "./store.nodes";
+import { type ConnectionSystem, createNodeConnectionSystem } from "./system.node-connection";
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
 import { createBackground } from "./ui.background";
 import { type LeftPaneCtrl, createLeftPaneControls } from "./ui.left-pane";
@@ -13,8 +15,9 @@ import { setMouseImages } from "./ui.mouse";
 export const bus = eBus<EventMap>();
 
 // TODO:
-// - start the camera in the middle of the grid
-// - first node is created in the middle of the grid
+// - create a connection system that handles connecting nodes to each other
+//    - this will also handle drawing a dotted line that animates
+//    - the dotted line should have rounded rectangles that animates from Position to Position
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
@@ -61,9 +64,12 @@ export const newSceneEngine = (gameVars: GameVars) => {
 export const gameScene = (gameVars: GameVars): IScene => {
    const { game, app, assets, resizer } = gameVars;
 
+   let systemDrag: DragSystem | undefined;
+   let systemNodeConnect: ConnectionSystem | undefined;
    let camera: Camera | undefined;
-   let dragSystem: DragSystem | undefined;
    let leftPaneCtrl: LeftPaneCtrl | undefined;
+   const store: NodeStore = createNodeStore();
+   const factory: NodeFactory = createNodeFactory({ gameVars });
 
    const background = createBackground({ rows: 30, cols: 45 });
 
@@ -73,7 +79,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
    const windowResize = () =>
       setTimeout(() => {
          resizer.resize(app, game);
-         camera?.lookAt(dragSystem?.getFocusPoint());
+         camera?.lookAt(systemDrag?.getFocusPoint());
       }, 0);
    window.addEventListener("windowResize", windowResize);
 
@@ -82,7 +88,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
    setMouseImages(app);
 
    bus.on("zoom", (e) => {
-      if (!dragSystem || !camera) return;
+      if (!systemDrag || !camera) return;
       const deltaZoom = 0.001;
       if (e === "in") camera.zoom(deltaZoom);
       if (e === "out") camera.zoom(-deltaZoom);
@@ -101,14 +107,34 @@ export const gameScene = (gameVars: GameVars): IScene => {
       const smallerHeight = Math.min(prevDimen.height, nextDimen.height);
       const diffHeight = smallerHeight / largerHeight;
 
-      const dragPos = dragSystem.getFocusPoint();
+      const dragPos = systemDrag.getFocusPoint();
       const nextPos = {
          x: zoomedIn ? dragPos.x / diffWidth : dragPos.x * diffWidth,
          y: zoomedIn ? dragPos.y / diffHeight : dragPos.y * diffHeight,
       };
-      dragSystem.setFocusPoint(nextPos);
+      systemDrag.setFocusPoint(nextPos);
 
-      camera?.lookAt(dragSystem?.getFocusPoint());
+      camera?.lookAt(systemDrag?.getFocusPoint());
+   });
+
+   bus.on("node", (e) => {
+      if (e.count > store.count()) {
+         while (e.count > store.count()) {
+            const amount = e.count - store.count();
+            const newNodes = factory.create(amount, store.data());
+            for (const node of newNodes) {
+               store.push(node);
+               systemNodeConnect?.setup();
+            }
+         }
+      }
+      if (e.count < store.count()) {
+         while (e.count < store.count()) {
+            const node = store.pop();
+            node?.destroy();
+            systemNodeConnect?.setup();
+         }
+      }
    });
 
    return {
@@ -120,33 +146,36 @@ export const gameScene = (gameVars: GameVars): IScene => {
             bounds: background.size,
             clampCamera: false,
          });
-         dragSystem = createDragSystem({
+         systemDrag = createDragSystem({
             gameVars,
             clamp: true,
             bounds: background.size,
          });
+         systemNodeConnect = createNodeConnectionSystem({
+            gameVars: gameVars,
+            store: store,
+         });
 
          setTimeout(() => {
-            if (!dragSystem || !camera) return;
+            if (!systemDrag || !camera) return;
             const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
-            dragSystem.setFocusPoint(gridCenter);
-            camera.lookAt(dragSystem?.getFocusPoint());
+            systemDrag.setFocusPoint(gridCenter);
+            camera.lookAt(systemDrag?.getFocusPoint());
             // const bgSize = background.size;
             // const firstNodePos = { x: bgSize.width * 0.5, y: bgSize.height * 0.5 };
             // createBtcNode({ gameVars, assets, pos: firstNodePos });
          }, 5);
 
          leftPaneCtrl = createLeftPaneControls(gameVars);
-
-         startNodeFactory(gameVars);
       },
 
       update: (tick: PIXI.Ticker) => {
          camera?.update(tick);
          leftPaneCtrl?.update(tick);
-         if (dragSystem?.isDragging()) {
-            camera?.lookAt(dragSystem?.getFocusPoint());
+         if (systemDrag?.isDragging()) {
+            camera?.lookAt(systemDrag?.getFocusPoint());
          }
+         systemNodeConnect?.update(tick);
       },
    };
 };

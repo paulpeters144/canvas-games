@@ -52,11 +52,11 @@ export const createGameScale = (): GameScaler => {
    const zoom = (value: number) => {
       const zoomFactor = 1 + value;
       dynamicScale = dynamicScale * zoomFactor;
-      if (dynamicScale < 0.5) {
-         dynamicScale = 0.5;
+      if (dynamicScale < 0.4) {
+         dynamicScale = 0.4;
       }
-      if (dynamicScale > 2) {
-         dynamicScale = 2;
+      if (dynamicScale > 1.75) {
+         dynamicScale = 1.75;
       }
    };
 
