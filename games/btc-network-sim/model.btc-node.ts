@@ -19,6 +19,7 @@ export interface BtcNode {
    connect: (node: BtcNode) => void;
    disconnect: () => void;
    connectCount: () => number;
+   isConnectedTo: (node: BtcNode) => boolean;
    anim: PIXI.AnimatedSprite;
 }
 
@@ -102,6 +103,8 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       return nodeConnections.size;
    };
 
+   const isConnectedTo = (node: BtcNode) => nodeConnections.has(node.id());
+
    return {
       setRunning,
       anim,
@@ -112,5 +115,6 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       connect,
       disconnect,
       connectCount,
+      isConnectedTo,
    };
 };

@@ -69,7 +69,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
    let camera: Camera | undefined;
    let leftPaneCtrl: LeftPaneCtrl | undefined;
    const store: NodeStore = createNodeStore();
-   const factory: NodeFactory = createNodeFactory({ gameVars });
+   const factory: NodeFactory = createNodeFactory({ gameVars, store });
 
    const background = createBackground({ rows: 30, cols: 45 });
 
@@ -118,22 +118,20 @@ export const gameScene = (gameVars: GameVars): IScene => {
    });
 
    bus.on("node", (e) => {
+      console.log(e);
       if (e.count > store.count()) {
          while (e.count > store.count()) {
-            const amount = e.count - store.count();
-            const newNodes = factory.create(amount, store.data());
-            for (const node of newNodes) {
-               store.push(node);
-               systemNodeConnect?.setup();
-            }
+            const newNode = factory.create();
+            store.push(newNode);
+            systemNodeConnect?.setup();
          }
       }
       if (e.count < store.count()) {
          while (e.count < store.count()) {
             const node = store.pop();
             node?.destroy();
-            systemNodeConnect?.setup();
          }
+         systemNodeConnect?.setup();
       }
    });
 

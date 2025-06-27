@@ -1,18 +1,20 @@
 import * as PIXI from "pixi.js";
 import type { GameVars } from "./game.vars";
 import { type BtcNode, createBtcNode } from "./model.btc-node";
+import type { NodeStore } from "./store.nodes";
 import type { Position } from "./types";
 
 export interface NodeFactory {
-   create: (amount: number, allNodes: BtcNode[]) => BtcNode[];
+   create: () => BtcNode;
 }
 
 interface nodeFactoryProps {
    gameVars: GameVars;
+   store: NodeStore;
 }
 
 export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
-   const { gameVars } = props;
+   const { gameVars, store } = props;
    const { game, assets, scaler } = gameVars;
 
    const getGameSize = () => {
@@ -22,16 +24,10 @@ export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
       };
    };
 
-   const create = (amount: number, allNodes: BtcNode[]) => {
-      const result: BtcNode[] = [];
-      let count = 0;
-      while (count < amount) {
-         const pos = getNextOpenPos(allNodes, getGameSize());
-         const node = createBtcNode({ gameVars, assets, pos });
-         result.push(node);
-         count++;
-      }
-      return result;
+   const create = () => {
+      const pos = getNextOpenPos(store.data(), getGameSize());
+      const node = createBtcNode({ gameVars, assets, pos });
+      return node;
    };
 
    return {

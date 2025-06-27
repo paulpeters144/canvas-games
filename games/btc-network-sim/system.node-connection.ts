@@ -3,6 +3,7 @@ import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
 import type { BtcNode } from "./model.btc-node";
 import type { NodeStore } from "./store.nodes";
+import type { Position } from "./types";
 
 export interface ConnectionSystem {
    setup: () => void;
@@ -31,7 +32,7 @@ export const createNodeConnectionSystem = (props: connectionSystemProps): Connec
       const line = new PIXI.Graphics();
 
       const lineDotRadius = 2;
-      const dotSpacing = lineDotRadius * 5;
+      const dotSpacing = lineDotRadius * 7.5;
       const lineColor = "#FFFFFF";
 
       const deltaX = p2.x - p1.x;
@@ -59,19 +60,15 @@ export const createNodeConnectionSystem = (props: connectionSystemProps): Connec
 
       for (const n of store.data()) n.disconnect();
 
-      let prevNode: BtcNode | undefined = undefined;
+      // const reversedNodesData = [...store.data()].reverse();
       for (const nextNode of store.data()) {
-         if (!prevNode) {
-            prevNode = nextNode;
-            continue;
-         }
-         if (prevNode.connectCount() <= 2) {
-            prevNode.connect(nextNode);
-            nextNode.connect(prevNode);
-            const line = createConnectionBetween({ node1: prevNode, node2: nextNode });
-            connectLines.push(line);
-         }
-         prevNode = nextNode;
+         if (nextNode.connectCount() >= 8) continue;
+         getClosestNodes({ node: nextNode, count: 6, store: store }).map((n) => {
+            nextNode.connect(n);
+            n.connect(nextNode);
+            const l = createConnectionBetween({ node1: nextNode, node2: n });
+            connectLines.push(l);
+         });
       }
 
       for (const line of connectLines) game.addChild(line);
@@ -83,4 +80,44 @@ export const createNodeConnectionSystem = (props: connectionSystemProps): Connec
       setup: setupGridConnections,
       update,
    };
+};
+
+interface nodeWithDistance {
+   node: BtcNode;
+   distance: number;
+}
+
+interface closestNodeProps {
+   node: BtcNode;
+   count: number;
+   store: NodeStore;
+}
+
+const getClosestNodes = (props: closestNodeProps): BtcNode[] => {
+   const { node, count, store } = props;
+   const allNodes = store.data();
+
+   const nodesWithDistances: nodeWithDistance[] = [];
+
+   const calculateDistance = (p1: Position, p2: Position): number => {
+      const dx = p1.x - p2.x;
+      const dy = p1.y - p2.y;
+      return Math.sqrt(dx * dx + dy * dy);
+   };
+
+   for (const currentNode of allNodes) {
+      if (currentNode.isConnectedTo(node)) continue;
+      if (currentNode.id() === node.id()) continue;
+      if (currentNode.connectCount() >= 6) continue;
+
+      const distance = calculateDistance(node.anim, currentNode.anim);
+      if (distance >= 200) continue;
+      nodesWithDistances.push({ node: currentNode, distance: distance });
+   }
+
+   nodesWithDistances.sort((a, b) => a.distance - b.distance);
+
+   const result = nodesWithDistances.slice(0, count + 1).map((item) => item.node);
+
+   return result;
 };
