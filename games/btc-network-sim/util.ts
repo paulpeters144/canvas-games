@@ -11,12 +11,14 @@ export const standard = {
    },
    hash: (v: unknown) => {
       // objects may not work here because the objects will need to have deterministic props
+      // hopefully the props stay in order
       const value = typeof v === "object" ? JSON.stringify(v) : `${v}`;
       const dataBytes = new TextEncoder().encode(value);
       const hashBytes = sha256(dataBytes);
       const result = bytesToHex(hashBytes);
       return result;
    },
+   round: (num: number) => Math.round(num * 1000000000) / 1000000000,
 };
 
 export const validate = {

@@ -31,7 +31,7 @@ export const createBtcWallet = (): BtcWallet => {
    const sum = (arr: number[]) => {
       let result = 0;
       for (let i = 0; i < arr.length; i++) result += arr[i];
-      return Math.round(result * 1000000000) / 1000000000;
+      return standard.round(result);
    };
 
    const balance = () => sum(utxoArr.map((u) => Number(u.value)));

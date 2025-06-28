@@ -1,13 +1,16 @@
 import * as PIXI from "pixi.js";
-import type { GameAssets } from "./assets";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
+import {
+   type BroadcastMsg,
+   type NodeConnections,
+   createConnections,
+} from "./model.connection";
 import { type Mempool, createMempool } from "./model.mempool";
 import { type BtcWallet, createBtcWallet } from "./model.wallet";
 import type { Position } from "./types";
 
 interface BtcNodeProps {
-   assets: GameAssets;
    gameVars: GameVars;
    pos?: Position;
 }
@@ -18,19 +21,22 @@ export interface BtcNode {
    createdAt: () => Date;
    destroy: () => void;
    toRect: () => PIXI.Rectangle;
-   connection: NodeConnections;
+   connections: () => NodeConnections;
    anim: PIXI.AnimatedSprite;
-   sendBtc: (props: { amount: number; node: BtcNode }) => void;
+   sendBtc: (props: { units: number; node: BtcNode }) => void;
+   receiveMsg: (msg: BroadcastMsg) => void;
+   wallet: BtcWallet;
 }
 
 export const createBtcNode = (props: BtcNodeProps): BtcNode => {
-   const { assets, gameVars, pos } = props;
-   const { game } = gameVars;
+   const { gameVars, pos } = props;
+   const { game, assets } = gameVars;
 
    const createdAt = new Date();
    const id = crypto.randomUUID().replaceAll("-", "").slice(0, 15);
    const wallet: BtcWallet = createBtcWallet();
    const mempool: Mempool = createMempool();
+   const connections: NodeConnections = createConnections(id);
 
    const width = 37;
    const height = 43;
@@ -92,7 +98,33 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       return new PIXI.Rectangle(anim.x, anim.y, anim.width, anim.height);
    };
 
-   const sendBtc = (props: { amount: number; node: BtcNode }) => {};
+   const sendBtc = (props: { units: number; node: BtcNode }) => {
+      const { units, node } = props;
+      const recAddr = node.wallet.addr();
+      const tx = wallet.createTx({ units, recAddr });
+      mempool.add(tx);
+      const msg: BroadcastMsg = { type: "tx", obj: tx, fromId: id };
+      connections.sendBroadcast(msg);
+   };
+
+   const receiveMsg = (msg: BroadcastMsg) => {
+      if (msg.type === "block") {
+         throw new Error("not impl yet");
+      }
+
+      if (msg.type === "tx") {
+         if (mempool.hasTx(msg.obj)) return;
+         mempool.add(msg.obj);
+      }
+
+      console.log(`id:${id} recieved msg from:${msg.fromId}`);
+
+      msg.fromId = id;
+      for (const n of connections.getAll()) {
+         if (n.id() === msg.fromId) continue;
+         connections.sendBroadcast(msg);
+      }
+   };
 
    return {
       setRunning,
@@ -101,39 +133,9 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       id: () => id,
       destroy,
       toRect,
-      connection: connection(),
+      connections: () => connections,
       sendBtc,
-   };
-};
-
-interface NodeConnections {
-   connect: (node: BtcNode) => void;
-   disconnect: () => void;
-   connectCount: () => number;
-   isConnectedTo: (node: BtcNode) => boolean;
-}
-
-const connection = (): NodeConnections => {
-   const nodeConnections = new Map<string, BtcNode>();
-   const connect = (node: BtcNode) => {
-      if (nodeConnections.has(node.id())) return;
-      nodeConnections.set(node.id(), node);
-   };
-
-   const disconnect = () => {
-      nodeConnections.clear();
-   };
-
-   const connectCount = () => {
-      return nodeConnections.size;
-   };
-
-   const isConnectedTo = (node: BtcNode) => nodeConnections.has(node.id());
-
-   return {
-      connect,
-      disconnect,
-      connectCount,
-      isConnectedTo,
+      receiveMsg,
+      wallet,
    };
 };

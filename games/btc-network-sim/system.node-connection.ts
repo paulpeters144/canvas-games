@@ -15,7 +15,9 @@ interface connectionSystemProps {
    store: NodeStore;
 }
 
-export const createNodeConnectionSystem = (props: connectionSystemProps): ConnectionSystem => {
+export const createNodeConnectionSystem = (
+   props: connectionSystemProps,
+): ConnectionSystem => {
    const { gameVars, store } = props;
    const { game } = gameVars;
 
@@ -58,14 +60,13 @@ export const createNodeConnectionSystem = (props: connectionSystemProps): Connec
          line?.destroy();
       }
 
-      for (const n of store.data()) n.connection.disconnect();
+      for (const n of store.data()) n.connections().disconnect();
 
-      // const reversedNodesData = [...store.data()].reverse();
       for (const nextNode of store.data()) {
-         if (nextNode.connection.connectCount() >= 8) continue;
+         if (nextNode.connections().connectCount() >= 8) continue;
          getClosestNodes({ node: nextNode, count: 6, store: store }).map((n) => {
-            nextNode.connection.connect(n);
-            n.connection.connect(nextNode);
+            nextNode.connections().connect(n);
+            n.connections().connect(nextNode);
             const l = createConnectionBetween({ node1: nextNode, node2: n });
             connectLines.push(l);
          });
@@ -106,9 +107,9 @@ const getClosestNodes = (props: closestNodeProps): BtcNode[] => {
    };
 
    for (const currentNode of allNodes) {
-      if (currentNode.connection.isConnectedTo(node)) continue;
+      if (currentNode.connections().isConnectedTo(node)) continue;
       if (currentNode.id() === node.id()) continue;
-      if (currentNode.connection.connectCount() >= 6) continue;
+      if (currentNode.connections().connectCount() >= 6) continue;
 
       const distance = calculateDistance(node.anim, currentNode.anim);
       if (distance >= 200) continue;

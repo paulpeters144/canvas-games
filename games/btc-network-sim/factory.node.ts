@@ -15,7 +15,7 @@ interface nodeFactoryProps {
 
 export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
    const { gameVars, store } = props;
-   const { game, assets, scaler } = gameVars;
+   const { game, scaler } = gameVars;
 
    const getGameSize = () => {
       return {
@@ -26,7 +26,7 @@ export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
 
    const create = () => {
       const pos = getNextOpenPos(store.data(), getGameSize());
-      const node = createBtcNode({ gameVars, assets, pos });
+      const node = createBtcNode({ gameVars, pos });
       return node;
    };
 
@@ -35,7 +35,14 @@ export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
    };
 };
 
-type posKey = "top" | "topLeft" | "topRight" | "bottom" | "bottomLeft" | "bottomRight";
+type posKey =
+   | "top"
+   | "topLeft"
+   | "topRight"
+   | "bottom"
+   | "bottomLeft"
+   | "bottomRight";
+
 const getSurroundingPos = (node: BtcNode) => {
    const result = {
       top: new PIXI.Rectangle(),
@@ -76,7 +83,10 @@ const getSurroundingPos = (node: BtcNode) => {
    return result;
 };
 
-const displayOpenNeighborSlots = (props: { node: BtcNode; game: PIXI.ContainerChild }) => {
+const displayOpenNeighborSlots = (props: {
+   node: BtcNode;
+   game: PIXI.ContainerChild;
+}) => {
    const { node, game } = props;
    const surroundingPos = getSurroundingPos(node);
    for (const key of Object.keys(surroundingPos) as posKey[]) {
@@ -158,8 +168,10 @@ const getNextOpenPos = (
          const potentialRect = surroundingRects[key];
 
          if (potentialRect.x < 10 || potentialRect.y < 10) continue;
-         if (potentialRect.x + potentialRect.width + nodeBuffer > gameSize.width) continue;
-         if (potentialRect.y + potentialRect.height + nodeBuffer > gameSize.height) continue;
+         if (potentialRect.x + potentialRect.width + nodeBuffer > gameSize.width)
+            continue;
+         if (potentialRect.y + potentialRect.height + nodeBuffer > gameSize.height)
+            continue;
 
          const collides = store.some((n) =>
             rectsCollide({
