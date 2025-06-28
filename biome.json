@@ -23,7 +23,7 @@
       "enabled": true,
       "indentStyle": "space",
       "indentWidth": 3,
-      "lineWidth": 100
+      "lineWidth": 85
    },
    "organizeImports": {
       "enabled": true

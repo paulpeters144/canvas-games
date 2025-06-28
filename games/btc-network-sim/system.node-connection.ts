@@ -58,14 +58,14 @@ export const createNodeConnectionSystem = (props: connectionSystemProps): Connec
          line?.destroy();
       }
 
-      for (const n of store.data()) n.disconnect();
+      for (const n of store.data()) n.connection.disconnect();
 
       // const reversedNodesData = [...store.data()].reverse();
       for (const nextNode of store.data()) {
-         if (nextNode.connectCount() >= 8) continue;
+         if (nextNode.connection.connectCount() >= 8) continue;
          getClosestNodes({ node: nextNode, count: 6, store: store }).map((n) => {
-            nextNode.connect(n);
-            n.connect(nextNode);
+            nextNode.connection.connect(n);
+            n.connection.connect(nextNode);
             const l = createConnectionBetween({ node1: nextNode, node2: n });
             connectLines.push(l);
          });
@@ -106,9 +106,9 @@ const getClosestNodes = (props: closestNodeProps): BtcNode[] => {
    };
 
    for (const currentNode of allNodes) {
-      if (currentNode.isConnectedTo(node)) continue;
+      if (currentNode.connection.isConnectedTo(node)) continue;
       if (currentNode.id() === node.id()) continue;
-      if (currentNode.connectCount() >= 6) continue;
+      if (currentNode.connection.connectCount() >= 6) continue;
 
       const distance = calculateDistance(node.anim, currentNode.anim);
       if (distance >= 200) continue;
