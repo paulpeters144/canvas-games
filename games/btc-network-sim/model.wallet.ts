@@ -90,7 +90,7 @@ export const createBtcWallet = (): BtcWallet => {
          inputs: inputs,
          outputs: [
             {
-               id: standard.utxoId(),
+               id: standard.idStr(),
                value: standard.numAsStr(units),
                owner: recAddr,
             },
@@ -105,7 +105,7 @@ export const createBtcWallet = (): BtcWallet => {
 
       if (rebateValue > 0) {
          result.outputs.push({
-            id: standard.utxoId(),
+            id: standard.idStr(),
             value: standard.numAsStr(rebateValue),
             owner: addr,
          });
@@ -124,6 +124,16 @@ export const createBtcWallet = (): BtcWallet => {
          utxoArr.push(u);
       });
    };
+
+   // -=-=-=-=-=-=-=-=-=-=-=-TO=REMOVE=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+   setNewUTXOs(
+      Array.from({ length: 1000 }).map(() => ({
+         id: standard.idStr(),
+         value: standard.numAsStr(Math.random() * (1 - 0.001 + 1) + 0.001),
+         owner: "",
+      })) as UTXO[],
+   );
+   // -=-=-=-=-=-=-=-=-=-=-=-TO=REMOVE=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
    return {
       addr: () => addr,

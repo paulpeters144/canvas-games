@@ -72,7 +72,9 @@ const createChevron = () => {
    const pos = { x: 5, y: 5 };
    const boxSize = 4;
 
-   const box1 = new PIXI.Graphics().rect(pos.x, pos.y, boxSize, boxSize).fill("#FFFFFF");
+   const box1 = new PIXI.Graphics()
+      .rect(pos.x, pos.y, boxSize, boxSize)
+      .fill("#FFFFFF");
 
    const box2 = new PIXI.Graphics()
       .rect(pos.x + boxSize, pos.y + boxSize, boxSize, boxSize)
@@ -156,11 +158,21 @@ const createBitcoinNodeControls = (props: btcNodeCtrlProps) => {
       .fill({ color: "#aa4f11" });
 
    const sliderCtr = new PIXI.Container();
-   const sliderMain = new PIXI.Graphics().rect(5, 25, 10, 10).fill({ color: "#d8bbaa" });
-   const sliderBT = new PIXI.Graphics().rect(5, 22, 10, 3).fill({ color: "#FFFFFF" });
-   const sliderBR = new PIXI.Graphics().rect(15, 25, 3, 10).fill({ color: "#FFFFFF" });
-   const sliderBB = new PIXI.Graphics().rect(5, 35, 10, 3).fill({ color: "#FFFFFF" });
-   const sliderBL = new PIXI.Graphics().rect(2, 25, 3, 10).fill({ color: "#FFFFFF" });
+   const sliderMain = new PIXI.Graphics()
+      .rect(5, 25, 10, 10)
+      .fill({ color: "#d8bbaa" });
+   const sliderBT = new PIXI.Graphics()
+      .rect(5, 22, 10, 3)
+      .fill({ color: "#FFFFFF" });
+   const sliderBR = new PIXI.Graphics()
+      .rect(15, 25, 3, 10)
+      .fill({ color: "#FFFFFF" });
+   const sliderBB = new PIXI.Graphics()
+      .rect(5, 35, 10, 3)
+      .fill({ color: "#FFFFFF" });
+   const sliderBL = new PIXI.Graphics()
+      .rect(2, 25, 3, 10)
+      .fill({ color: "#FFFFFF" });
    sliderCtr.addChild(sliderMain, sliderBT, sliderBR, sliderBB, sliderBL);
    sliderCtr.y -= 1;
 
@@ -360,7 +372,10 @@ export const createLeftPaneControls = (gameVars: GameVars): LeftPaneCtrl => {
 
    const handleResize = (app: PIXI.Application) => {
       container.scale.set(scaler.getBaseScale());
-      container.position.set(app.screen.width - container.width, 90 * scaler.getBaseScale());
+      container.position.set(
+         app.screen.width - container.width,
+         90 * scaler.getBaseScale(),
+      );
    };
 
    const resize = () => setTimeout(() => handleResize(app), 10);
@@ -412,11 +427,20 @@ export const createLeftPaneControls = (gameVars: GameVars): LeftPaneCtrl => {
       handleResize(app);
    };
 
+   // TODO: remove
+   setOpen(false);
+
    chevron.hitArea.interactive = true;
    chevron.hitArea.cursor = "pointer";
    chevron.hitArea.on("pointerdown", () => setOpen(!isOpen));
 
-   container.addChild(bg.ctr, chevron.ctr, btcNodeCtrl.ctr, badNodeCtrl.ctr, zoomCtrls.ctr);
+   container.addChild(
+      bg.ctr,
+      chevron.ctr,
+      btcNodeCtrl.ctr,
+      badNodeCtrl.ctr,
+      zoomCtrls.ctr,
+   );
 
    app.stage.addChild(container);
    handleResize(app);

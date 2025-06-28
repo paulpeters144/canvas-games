@@ -46,7 +46,7 @@ test("nodeConnection", () => {
 const createUTXOs = (len: number) => {
    const utxos: UTXO[] = Array.from({ length: len }).map((_, i) => {
       return {
-         id: standard.utxoId(),
+         id: standard.idStr(),
          value: standard.numAsStr(i + 1),
          owner: "",
       };

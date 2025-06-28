@@ -5,7 +5,7 @@ import { hexToBytes } from "@noble/hashes/utils";
 import type { BlockTx, PreSignedTx } from "./types";
 
 export const standard = {
-   utxoId: () => crypto.randomUUID().replaceAll("-", "").slice(0, 25),
+   idStr: () => crypto.randomUUID().replaceAll("-", "").slice(0, 25),
    numAsStr: (num: number) => {
       return num.toFixed(8);
    },
@@ -47,4 +47,14 @@ export const validate = {
       const isValid = txHash === validatedHash;
       return isValid;
    },
+};
+
+export const randNum = (props: {
+   min: number;
+   max: number;
+   decimal?: boolean;
+}): number => {
+   const { min, max, decimal = false } = props;
+   const baseRand = Math.random() * (max - min + 1) + min;
+   return decimal ? baseRand : Math.floor(baseRand);
 };

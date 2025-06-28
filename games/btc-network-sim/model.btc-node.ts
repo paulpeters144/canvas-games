@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
+import { bus } from "./main";
 import {
    type BroadcastMsg,
    type NodeConnections,
@@ -9,6 +10,7 @@ import {
 import { type Mempool, createMempool } from "./model.mempool";
 import { type BtcWallet, createBtcWallet } from "./model.wallet";
 import type { Position } from "./types";
+import { randNum, standard } from "./util";
 
 interface BtcNodeProps {
    gameVars: GameVars;
@@ -22,10 +24,12 @@ export interface BtcNode {
    destroy: () => void;
    toRect: () => PIXI.Rectangle;
    connections: () => NodeConnections;
+   pos: () => Position;
    anim: PIXI.AnimatedSprite;
    sendBtc: (props: { units: number; node: BtcNode }) => void;
    receiveMsg: (msg: BroadcastMsg) => void;
    wallet: BtcWallet;
+   update: (tick: PIXI.Ticker) => void;
 }
 
 export const createBtcNode = (props: BtcNodeProps): BtcNode => {
@@ -82,18 +86,6 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
          : offNode.position.set(anim.x, anim.y);
    };
 
-   const destroy = () => {
-      if (anim.parent) {
-         anim.parent.removeChild(anim);
-      }
-      anim.destroy();
-
-      if (offNode.parent) {
-         offNode.parent.removeChild(offNode);
-      }
-      offNode.destroy();
-   };
-
    const toRect = () => {
       return new PIXI.Rectangle(anim.x, anim.y, anim.width, anim.height);
    };
@@ -117,13 +109,50 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
          mempool.add(msg.obj);
       }
 
-      console.log(`id:${id} recieved msg from:${msg.fromId}`);
-
       msg.fromId = id;
       for (const n of connections.getAll()) {
          if (n.id() === msg.fromId) continue;
          connections.sendBroadcast(msg);
       }
+   };
+
+   const destroy = () => {
+      if (anim.parent) {
+         anim.parent.removeChild(anim);
+      }
+      anim.destroy();
+
+      if (offNode.parent) {
+         offNode.parent.removeChild(offNode);
+      }
+      offNode.destroy();
+   };
+
+   const sendBtcInterval = (() => {
+      let eventInterval = randNum({ min: 100, max: 5000 });
+      let currentTick = 0;
+      return {
+         update: (t: PIXI.Ticker) => {
+            if (currentTick >= eventInterval) {
+               const balance = wallet.balance();
+               const amount = randNum({
+                  min: balance * 0.00001,
+                  max: balance * 0.01,
+                  decimal: true,
+               });
+               const units = standard.round(amount);
+               bus.fire("randSend", { fromId: id, units });
+               currentTick = 0;
+               eventInterval = randNum({ min: 100, max: 5000 });
+               return;
+            }
+            currentTick += t.deltaMS;
+         },
+      };
+   })();
+
+   const update = (tick: PIXI.Ticker) => {
+      sendBtcInterval.update(tick);
    };
 
    return {
@@ -137,5 +166,12 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       sendBtc,
       receiveMsg,
       wallet,
+      update,
+      pos: () => {
+         return {
+            x: anim.x + anim.width * 0.5,
+            y: anim.y + anim.height * 0.5,
+         };
+      },
    };
 };

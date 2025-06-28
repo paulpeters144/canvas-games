@@ -2,10 +2,10 @@ import { eBus } from "games/util/event-bus";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { type Camera, createCamera } from "./camera";
-import type { EventMap } from "./event-map";
 import { type NodeFactory, createNodeFactory } from "./factory.node";
 import { type GameVars, createGameVars } from "./game.vars";
 import { type NodeStore, createNodeStore } from "./store.nodes";
+import { type MoveTxSystem, createMoveTxSystem } from "./system.move-tx";
 import {
    type ConnectionSystem,
    createNodeConnectionSystem,
@@ -14,6 +14,8 @@ import { type DragSystem, createDragSystem } from "./system.pointer-drag";
 import { createBackground } from "./ui.background";
 import { type LeftPaneCtrl, createLeftPaneControls } from "./ui.left-pane";
 import { setMouseImages } from "./ui.mouse";
+import { randNum } from "./util";
+import type { EventMap } from "./util.events";
 
 export const bus = eBus<EventMap>();
 
@@ -71,6 +73,8 @@ export const gameScene = (gameVars: GameVars): IScene => {
 
    let systemDrag: DragSystem | undefined;
    let systemNodeConnect: ConnectionSystem | undefined;
+   let systemMoveTx: MoveTxSystem | undefined;
+
    let camera: Camera | undefined;
    let leftPaneCtrl: LeftPaneCtrl | undefined;
    const store: NodeStore = createNodeStore();
@@ -80,13 +84,15 @@ export const gameScene = (gameVars: GameVars): IScene => {
 
    const sendResizeEvent = () =>
       window.dispatchEvent(new CustomEvent("windowResize"));
+
    window.addEventListener("resize", () => sendResizeEvent);
 
    const windowResize = () =>
       setTimeout(() => {
          resizer.resize(app, game);
          camera?.lookAt(systemDrag?.getFocusPoint());
-      }, 0);
+      }, 10);
+
    window.addEventListener("windowResize", windowResize);
 
    app.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -124,7 +130,6 @@ export const gameScene = (gameVars: GameVars): IScene => {
    });
 
    bus.on("node", (e) => {
-      console.log(e);
       if (e.count > store.count()) {
          while (e.count > store.count()) {
             const newNode = factory.create();
@@ -139,6 +144,23 @@ export const gameScene = (gameVars: GameVars): IScene => {
          }
          systemNodeConnect?.setup();
       }
+   });
+
+   bus.on("randSend", (e) => {
+      try {
+         const randIdx = randNum({ min: 0, max: store.count() });
+         const receivingNode = store.data()[randIdx];
+         const sendingNode = store.data().find((n) => n.id() === e.fromId);
+
+         if (!sendingNode) return;
+         if (receivingNode.id() === e.fromId) return;
+
+         sendingNode.sendBtc({ units: e.units, node: receivingNode });
+         systemMoveTx?.displayMovement({
+            fromNode: sendingNode,
+            toNode: receivingNode,
+         });
+      } catch (_) {}
    });
 
    return {
@@ -159,14 +181,24 @@ export const gameScene = (gameVars: GameVars): IScene => {
             gameVars: gameVars,
             store: store,
          });
+         systemMoveTx = createMoveTxSystem(gameVars);
 
          setTimeout(() => {
             if (!systemDrag || !camera) return;
             const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
             systemDrag.setFocusPoint(gridCenter);
             camera.lookAt(systemDrag?.getFocusPoint());
-            bus.fire("node", { count: 1 });
-         }, 5);
+            bus.fire("node", { count: 7 });
+
+            for (let i = 0; i < 500; i++) {
+               setTimeout(() => bus.fire("zoom", "out"), i * 1.1);
+            }
+            // setTimeout(() => {
+            // const fromNode = store.data()[0];
+            // const toNode = store.data()[2];
+            // systemMoveTx?.displayMovement({ fromNode, toNode });
+            // }, 1000);
+         }, 50);
 
          leftPaneCtrl = createLeftPaneControls(gameVars);
       },
@@ -178,6 +210,8 @@ export const gameScene = (gameVars: GameVars): IScene => {
             camera?.lookAt(systemDrag?.getFocusPoint());
          }
          systemNodeConnect?.update(tick);
+         for (const node of store.data()) node.update(tick);
+         systemMoveTx?.update(tick);
       },
    };
 };

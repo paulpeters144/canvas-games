@@ -9,7 +9,7 @@ test("simple btc tx example", () => {
 
    const utxos: UTXO[] = Array.from({ length: 15 }).map((_, i) => {
       return {
-         id: standard.utxoId(),
+         id: standard.idStr(),
          value: standard.numAsStr(i + 1),
          owner: "",
       };
