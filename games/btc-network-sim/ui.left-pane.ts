@@ -370,7 +370,7 @@ export const createLeftPaneControls = (gameVars: GameVars): LeftPaneCtrl => {
       app: app,
       pos: { x: 15, y: 48 },
       label: "Bitcoin Nodes",
-      values: { min: 0, max: 107 },
+      values: { min: 0, max: 127 },
       onChange: (value: number) => {
          bus.fire("node", { count: value });
       },

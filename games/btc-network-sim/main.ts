@@ -71,7 +71,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
    const store: NodeStore = createNodeStore();
    const factory: NodeFactory = createNodeFactory({ gameVars, store });
 
-   const background = createBackground({ rows: 30, cols: 45 });
+   const background = createBackground({ rows: 30, cols: 46 });
 
    const sendResizeEvent = () => window.dispatchEvent(new CustomEvent("windowResize"));
    window.addEventListener("resize", () => sendResizeEvent);
