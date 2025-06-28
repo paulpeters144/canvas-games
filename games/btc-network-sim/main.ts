@@ -6,7 +6,10 @@ import type { EventMap } from "./event-map";
 import { type NodeFactory, createNodeFactory } from "./factory.node";
 import { type GameVars, createGameVars } from "./game.vars";
 import { type NodeStore, createNodeStore } from "./store.nodes";
-import { type ConnectionSystem, createNodeConnectionSystem } from "./system.node-connection";
+import {
+   type ConnectionSystem,
+   createNodeConnectionSystem,
+} from "./system.node-connection";
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
 import { createBackground } from "./ui.background";
 import { type LeftPaneCtrl, createLeftPaneControls } from "./ui.left-pane";
@@ -15,9 +18,11 @@ import { setMouseImages } from "./ui.mouse";
 export const bus = eBus<EventMap>();
 
 // TODO:
-// - create a connection system that handles connecting nodes to each other
-//    - this will also handle drawing a dotted line that animates
-//    - the dotted line should have rounded rectangles that animates from Position to Position
+// - randomly start btc with utxos
+// - randomly send txs to other nodes
+//    - may need to use the store to get a random node
+// - show some kind of animation - needs to be small - of a tx moving from 1 node to another
+// - transactions propagate from the sender of btc
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
@@ -73,7 +78,8 @@ export const gameScene = (gameVars: GameVars): IScene => {
 
    const background = createBackground({ rows: 30, cols: 46 });
 
-   const sendResizeEvent = () => window.dispatchEvent(new CustomEvent("windowResize"));
+   const sendResizeEvent = () =>
+      window.dispatchEvent(new CustomEvent("windowResize"));
    window.addEventListener("resize", () => sendResizeEvent);
 
    const windowResize = () =>
