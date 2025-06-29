@@ -64,7 +64,7 @@ interface txGraphicProps {
 }
 
 const createTxGraphic = (props: txGraphicProps): txGraphic => {
-   const { container, start, end, txMsg, speed = 15 } = props;
+   const { container, start, end, txMsg, speed = 12 } = props;
    const startPos = start.pos();
    const endPos = end.pos();
    const graphic = new PIXI.Graphics().circle(0, 0, 8).fill({ color: "#ff8f45" });
