@@ -5,7 +5,7 @@ import { type Camera, createCamera } from "./camera";
 import { type NodeFactory, createNodeFactory } from "./factory.node";
 import { type GameVars, createGameVars } from "./game.vars";
 import { type NodeStore, createNodeStore } from "./store.nodes";
-import { type MoveTxSystem, createMoveTxSystem } from "./system.move-tx";
+import { type TxMessageSystem, createTxMessageSystem } from "./system.move-tx";
 import {
    type ConnectionSystem,
    createNodeConnectionSystem,
@@ -73,7 +73,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
 
    let systemDrag: DragSystem | undefined;
    let systemNodeConnect: ConnectionSystem | undefined;
-   let systemMoveTx: MoveTxSystem | undefined;
+   let systemMoveTx: TxMessageSystem | undefined;
 
    let camera: Camera | undefined;
    let leftPaneCtrl: LeftPaneCtrl | undefined;
@@ -156,11 +156,25 @@ export const gameScene = (gameVars: GameVars): IScene => {
          if (receivingNode.id() === e.fromId) return;
 
          sendingNode.sendBtc({ units: e.units, node: receivingNode });
-         systemMoveTx?.displayMovement({
-            fromNode: sendingNode,
-            toNode: receivingNode,
-         });
+         // systemMoveTx?.displayMovement({
+         //    fromNode: sendingNode,
+         //    toNode: receivingNode,
+         // });
       } catch (_) {}
+   });
+
+   bus.on("newTx", (e) => {
+      const originNode = store.data().find((n) => n.id() === e.originId);
+      if (!originNode) return;
+      const connectingNodes = originNode.connections().getAll();
+      connectingNodes.map((n) => {
+         if (!n.receiveTx(e.tx)) return;
+         systemMoveTx?.displayMovement({
+            fromNode: originNode,
+            toNode: n,
+            txMsg: e.tx,
+         });
+      });
    });
 
    return {
@@ -181,17 +195,17 @@ export const gameScene = (gameVars: GameVars): IScene => {
             gameVars: gameVars,
             store: store,
          });
-         systemMoveTx = createMoveTxSystem(gameVars);
+         systemMoveTx = createTxMessageSystem(gameVars);
 
          setTimeout(() => {
             if (!systemDrag || !camera) return;
             const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
             systemDrag.setFocusPoint(gridCenter);
             camera.lookAt(systemDrag?.getFocusPoint());
-            bus.fire("node", { count: 7 });
+            bus.fire("node", { count: 127 });
 
             for (let i = 0; i < 500; i++) {
-               setTimeout(() => bus.fire("zoom", "out"), i * 1.1);
+               setTimeout(() => bus.fire("zoom", "out"), i * 1.75);
             }
             // setTimeout(() => {
             // const fromNode = store.data()[0];

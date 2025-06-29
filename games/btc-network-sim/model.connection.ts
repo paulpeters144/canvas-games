@@ -19,7 +19,6 @@ export interface NodeConnections {
    connectCount: () => number;
    isConnectedTo: (node: BtcNode) => boolean;
    getAll: () => BtcNode[];
-   sendBroadcast: (msg: BroadcastMsg) => void;
 }
 
 export const createConnections = (id: string): NodeConnections => {
@@ -48,19 +47,11 @@ export const createConnections = (id: string): NodeConnections => {
       return result;
    };
 
-   const sendBroadcast = (msg: BroadcastMsg) => {
-      for (const n of getAll()) {
-         if (n.id() === msg.fromId) continue;
-         n.receiveMsg(msg);
-      }
-   };
-
    return {
       connect,
       disconnect,
       connectCount,
       isConnectedTo,
       getAll,
-      sendBroadcast,
    };
 };

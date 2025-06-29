@@ -33,7 +33,7 @@ export const createBackground = ({ rows, cols }: { rows: number; cols: number })
          const x = col * gridSize;
          const y = row * gridSize;
 
-         graphic.circle(x, y, dotRadius).fill(dotColor);
+         graphic.circle(x, y, dotRadius).fill({ color: dotColor, alpha: 0.25 });
       }
    }
 

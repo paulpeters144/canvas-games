@@ -1,34 +1,42 @@
 import * as PIXI from "pixi.js";
 import type { GameVars } from "./game.vars";
+import { bus } from "./main";
 import type { BtcNode } from "./model.btc-node";
-import type { Position } from "./types";
-import { standard } from "./util";
+import type { BlockTx } from "./types";
 
-export interface MoveTxSystem {
-   displayMovement: (props: {
-      fromNode: BtcNode;
-      toNode: BtcNode;
-   }) => void;
+export interface TxMessageSystem {
+   displayMovement: (props: txMessage) => void;
    update: (ticker: PIXI.Ticker) => void;
 }
-export const createMoveTxSystem = (gameVars: GameVars): MoveTxSystem => {
+
+interface txMessage {
+   fromNode: BtcNode;
+   toNode: BtcNode;
+   txMsg: BlockTx;
+}
+
+export const createTxMessageSystem = (gameVars: GameVars): TxMessageSystem => {
    const activeTxGraphics: txGraphic[] = [];
-   const displayMovement = (props: { fromNode: BtcNode; toNode: BtcNode }) => {
-      const { fromNode, toNode } = props;
-      const tx = createTxGraphic({
-         startPos: fromNode.pos(),
-         endPos: toNode.pos(),
+   const displayMovement = (props: txMessage) => {
+      const { fromNode, toNode, txMsg } = props;
+      const txGraphic = createTxGraphic({
+         start: fromNode,
+         end: toNode,
          container: gameVars.game,
+         txMsg: txMsg,
       });
-      activeTxGraphics.push(tx);
+      activeTxGraphics.push(txGraphic);
    };
 
    const update = (ticker: PIXI.Ticker) => {
       for (let i = activeTxGraphics.length - 1; i >= 0; i--) {
-         const txG = activeTxGraphics[i];
-         if (txG.update(ticker)) {
-            txG.destroy();
+         const txGraphic = activeTxGraphics[i];
+         const completedDestination = txGraphic.update(ticker);
+         if (completedDestination) {
+            txGraphic.destroy();
             activeTxGraphics.splice(i, 1);
+            const msg = { originId: txGraphic.endId(), tx: txGraphic.txMsg() };
+            bus.fire("newTx", msg);
          }
       }
    };
@@ -42,18 +50,24 @@ export const createMoveTxSystem = (gameVars: GameVars): MoveTxSystem => {
 interface txGraphic {
    update: (tick: PIXI.Ticker) => boolean;
    destroy: () => void;
-   id: () => string;
+   txMsg: () => BlockTx;
+   startId: () => string;
+   endId: () => string;
 }
+
 interface txGraphicProps {
-   startPos: Position;
-   endPos: Position;
+   start: BtcNode;
+   end: BtcNode;
    container: PIXI.Container;
+   txMsg: BlockTx;
    speed?: number;
 }
+
 const createTxGraphic = (props: txGraphicProps): txGraphic => {
-   const { container, startPos, endPos, speed = 8 } = props;
-   const id = standard.idStr();
-   const graphic = new PIXI.Graphics().circle(0, 0, 8).fill({ color: "orange" });
+   const { container, start, end, txMsg, speed = 15 } = props;
+   const startPos = start.pos();
+   const endPos = end.pos();
+   const graphic = new PIXI.Graphics().circle(0, 0, 8).fill({ color: "#ff8f45" });
    graphic.x = startPos.x;
    graphic.y = startPos.y;
 
@@ -99,6 +113,8 @@ const createTxGraphic = (props: txGraphicProps): txGraphic => {
    return {
       update,
       destroy,
-      id: () => id,
+      txMsg: () => txMsg,
+      startId: () => start.id(),
+      endId: () => end.id(),
    };
 };

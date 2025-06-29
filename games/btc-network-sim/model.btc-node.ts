@@ -2,14 +2,10 @@ import * as PIXI from "pixi.js";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
 import { bus } from "./main";
-import {
-   type BroadcastMsg,
-   type NodeConnections,
-   createConnections,
-} from "./model.connection";
+import { type NodeConnections, createConnections } from "./model.connection";
 import { type Mempool, createMempool } from "./model.mempool";
 import { type BtcWallet, createBtcWallet } from "./model.wallet";
-import type { Position } from "./types";
+import type { BlockTx, Position } from "./types";
 import { randNum, standard } from "./util";
 
 interface BtcNodeProps {
@@ -27,7 +23,7 @@ export interface BtcNode {
    pos: () => Position;
    anim: PIXI.AnimatedSprite;
    sendBtc: (props: { units: number; node: BtcNode }) => void;
-   receiveMsg: (msg: BroadcastMsg) => void;
+   receiveTx: (tx: BlockTx) => boolean;
    wallet: BtcWallet;
    update: (tick: PIXI.Ticker) => void;
 }
@@ -95,25 +91,13 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       const recAddr = node.wallet.addr();
       const tx = wallet.createTx({ units, recAddr });
       mempool.add(tx);
-      const msg: BroadcastMsg = { type: "tx", obj: tx, fromId: id };
-      connections.sendBroadcast(msg);
+      bus.fire("newTx", { originId: id, tx: tx });
    };
 
-   const receiveMsg = (msg: BroadcastMsg) => {
-      if (msg.type === "block") {
-         throw new Error("not impl yet");
-      }
-
-      if (msg.type === "tx") {
-         if (mempool.hasTx(msg.obj)) return;
-         mempool.add(msg.obj);
-      }
-
-      msg.fromId = id;
-      for (const n of connections.getAll()) {
-         if (n.id() === msg.fromId) continue;
-         connections.sendBroadcast(msg);
-      }
+   const receiveTx = (tx: BlockTx) => {
+      if (mempool.hasTx(tx)) return false;
+      mempool.add(tx);
+      return true;
    };
 
    const destroy = () => {
@@ -129,7 +113,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    };
 
    const sendBtcInterval = (() => {
-      let eventInterval = randNum({ min: 100, max: 5000 });
+      let eventInterval = randNum({ min: 500, max: 180_000 });
       let currentTick = 0;
       return {
          update: (t: PIXI.Ticker) => {
@@ -143,7 +127,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
                const units = standard.round(amount);
                bus.fire("randSend", { fromId: id, units });
                currentTick = 0;
-               eventInterval = randNum({ min: 100, max: 5000 });
+               eventInterval = randNum({ min: 10_000, max: 180_000 });
                return;
             }
             currentTick += t.deltaMS;
@@ -164,7 +148,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       toRect,
       connections: () => connections,
       sendBtc,
-      receiveMsg,
+      receiveTx,
       wallet,
       update,
       pos: () => {
