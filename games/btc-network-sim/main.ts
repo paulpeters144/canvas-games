@@ -11,10 +11,10 @@ import {
    createNodeConnectionSystem,
 } from "./system.node-connection";
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
+import { type SendRandTxSystem, createSendTxSystem } from "./system.send-txs";
 import { createBackground } from "./ui.background";
 import { type LeftPaneCtrl, createLeftPaneControls } from "./ui.left-pane";
 import { setMouseImages } from "./ui.mouse";
-import { randNum } from "./util";
 import type { EventMap } from "./util.events";
 
 export const bus = eBus<EventMap>();
@@ -74,6 +74,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
    let systemDrag: DragSystem | undefined;
    let systemNodeConnect: ConnectionSystem | undefined;
    let systemMoveTx: TxMessageSystem | undefined;
+   let systemSendRandTx: SendRandTxSystem | undefined;
 
    let camera: Camera | undefined;
    let leftPaneCtrl: LeftPaneCtrl | undefined;
@@ -148,18 +149,14 @@ export const gameScene = (gameVars: GameVars): IScene => {
 
    bus.on("randSend", (e) => {
       try {
-         const randIdx = randNum({ min: 0, max: store.count() });
-         const receivingNode = store.data()[randIdx];
-         const sendingNode = store.data().find((n) => n.id() === e.fromId);
+         const allNodes = store.data();
+         const receivingNode = allNodes.find((n) => n.id() === e.toId);
+         const sendingNode = allNodes.find((n) => n.id() === e.fromId);
 
-         if (!sendingNode) return;
+         if (!sendingNode || !receivingNode) return;
          if (receivingNode.id() === e.fromId) return;
 
          sendingNode.sendBtc({ units: e.units, node: receivingNode });
-         // systemMoveTx?.displayMovement({
-         //    fromNode: sendingNode,
-         //    toNode: receivingNode,
-         // });
       } catch (_) {}
    });
 
@@ -196,22 +193,18 @@ export const gameScene = (gameVars: GameVars): IScene => {
             store: store,
          });
          systemMoveTx = createTxMessageSystem(gameVars);
+         systemSendRandTx = createSendTxSystem({ store });
 
          setTimeout(() => {
             if (!systemDrag || !camera) return;
             const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
             systemDrag.setFocusPoint(gridCenter);
             camera.lookAt(systemDrag?.getFocusPoint());
-            bus.fire("node", { count: 127 });
+            bus.fire("node", { count: 19 });
 
             for (let i = 0; i < 500; i++) {
-               setTimeout(() => bus.fire("zoom", "out"), i * 1.75);
+               setTimeout(() => bus.fire("zoom", "out"), i * 1.01);
             }
-            // setTimeout(() => {
-            // const fromNode = store.data()[0];
-            // const toNode = store.data()[2];
-            // systemMoveTx?.displayMovement({ fromNode, toNode });
-            // }, 1000);
          }, 50);
 
          leftPaneCtrl = createLeftPaneControls(gameVars);
@@ -224,8 +217,8 @@ export const gameScene = (gameVars: GameVars): IScene => {
             camera?.lookAt(systemDrag?.getFocusPoint());
          }
          systemNodeConnect?.update(tick);
-         for (const node of store.data()) node.update(tick);
          systemMoveTx?.update(tick);
+         systemSendRandTx?.update(tick);
       },
    };
 };

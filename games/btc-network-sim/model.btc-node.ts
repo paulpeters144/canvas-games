@@ -6,7 +6,6 @@ import { type NodeConnections, createConnections } from "./model.connection";
 import { type Mempool, createMempool } from "./model.mempool";
 import { type BtcWallet, createBtcWallet } from "./model.wallet";
 import type { BlockTx, Position } from "./types";
-import { randNum, standard } from "./util";
 
 interface BtcNodeProps {
    gameVars: GameVars;
@@ -25,7 +24,7 @@ export interface BtcNode {
    sendBtc: (props: { units: number; node: BtcNode }) => void;
    receiveTx: (tx: BlockTx) => boolean;
    wallet: BtcWallet;
-   update: (tick: PIXI.Ticker) => void;
+   mempool: Mempool;
 }
 
 export const createBtcNode = (props: BtcNodeProps): BtcNode => {
@@ -112,32 +111,8 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       offNode.destroy();
    };
 
-   const sendBtcInterval = (() => {
-      let eventInterval = randNum({ min: 500, max: 180_000 });
-      let currentTick = 0;
-      return {
-         update: (t: PIXI.Ticker) => {
-            if (currentTick >= eventInterval) {
-               const balance = wallet.balance();
-               const amount = randNum({
-                  min: balance * 0.00001,
-                  max: balance * 0.01,
-                  decimal: true,
-               });
-               const units = standard.round(amount);
-               bus.fire("randSend", { fromId: id, units });
-               currentTick = 0;
-               eventInterval = randNum({ min: 10_000, max: 180_000 });
-               return;
-            }
-            currentTick += t.deltaMS;
-         },
-      };
-   })();
-
-   const update = (tick: PIXI.Ticker) => {
-      sendBtcInterval.update(tick);
-   };
+   // const ui = constructUI(anim);
+   // game.addChild(ui);
 
    return {
       setRunning,
@@ -150,7 +125,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       sendBtc,
       receiveTx,
       wallet,
-      update,
+      mempool,
       pos: () => {
          return {
             x: anim.x + anim.width * 0.5,
@@ -158,4 +133,77 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
          };
       },
    };
+};
+
+const constructUI = (anim: PIXI.AnimatedSprite) => {
+   const buttonContainer = new PIXI.Container();
+   buttonContainer.interactive = true;
+   buttonContainer.visible = false;
+
+   const buttonWidth = 75;
+   const buttonHeight = 25;
+   const buttonRadius = 5;
+   const buttonPadding = 2;
+   const numButtons = 3;
+
+   const totalButtonsHeight = numButtons * buttonHeight;
+   const totalPadding = (numButtons - 1) * buttonPadding;
+   const backgroundWidth = buttonWidth + buttonPadding * 2;
+   const backgroundHeight = totalButtonsHeight + totalPadding + buttonPadding * 2;
+
+   const bgGraphic = new PIXI.Graphics()
+      .rect(0, 0, backgroundWidth + 10, backgroundHeight)
+      .fill({ color: "#FFFFFF", alpha: 0.005 });
+
+   buttonContainer.addChild(bgGraphic);
+
+   for (let i = 0; i < 3; i++) {
+      const button = new PIXI.Graphics()
+         .roundRect(0, 0, buttonWidth, buttonHeight, buttonRadius)
+         .fill({ color: "#FF7518" });
+
+      button.x = buttonPadding + 8;
+      button.y = buttonPadding + i * (buttonHeight + buttonPadding);
+
+      button.interactive = true;
+
+      button.on("pointerdown", () => {
+         console.log(`Button ${i + 1} was clicked!`);
+      });
+
+      buttonContainer.addChild(button);
+   }
+
+   anim.interactive = true;
+   let isInAnim = false;
+   let isInCtr = false;
+
+   anim.on("pointerenter", (e) => {
+      isInAnim = true;
+      buttonContainer.x = anim.x + anim.width - 5;
+      buttonContainer.y = anim.y - 15;
+      buttonContainer.visible = true;
+   });
+
+   anim.on("pointerleave", () => {
+      isInAnim = false;
+      setTimeout(() => {
+         if (!isInAnim && !isInCtr) buttonContainer.visible = false;
+      }, 100);
+   });
+
+   buttonContainer.on("pointerleave", () => {
+      isInCtr = false;
+      setTimeout(() => {
+         if (!isInAnim && !isInCtr) buttonContainer.visible = false;
+      }, 100);
+   });
+
+   buttonContainer.on("pointerenter", () => {
+      isInCtr = true;
+   });
+
+   buttonContainer.zIndex = ZLayer.mid;
+
+   return buttonContainer;
 };
