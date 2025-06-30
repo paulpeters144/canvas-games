@@ -19,6 +19,29 @@ export const standard = {
       return result;
    },
    round: (num: number) => Math.round(num * 1000000000) / 1000000000,
+   randomIp: () => {
+      const isPrivate = (ip: string): boolean => {
+         const [a, b] = ip.split(".").map(Number);
+
+         if (a === 10) return true;
+         if (a === 172 && b >= 16 && b <= 31) return true;
+         if (a === 192 && b === 168) return true;
+
+         return false;
+      };
+      const newRandomIp = () => {
+         const first = randNum({ min: 65, max: 172 });
+         const second = randNum({ min: 20, max: 256 });
+         const third = randNum({ min: 20, max: 256 });
+         const fourth = randNum({ min: 20, max: 256 });
+         return `${first}.${second}.${third}.${fourth}`;
+      };
+      let ip: string | undefined = undefined;
+      do {
+         ip = newRandomIp();
+      } while (isPrivate(ip));
+      return ip;
+   },
 };
 
 export const validate = {

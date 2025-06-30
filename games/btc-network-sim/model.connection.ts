@@ -25,10 +25,10 @@ export const createConnections = (id: string): NodeConnections => {
    const nodeConnections = new Map<string, BtcNode>();
 
    const connect = (node: BtcNode) => {
-      if (node.id() === id) return;
-      if (nodeConnections.has(node.id())) return;
+      if (node.ip() === id) return;
+      if (nodeConnections.has(node.ip())) return;
 
-      nodeConnections.set(node.id(), node);
+      nodeConnections.set(node.ip(), node);
    };
 
    const disconnect = () => {
@@ -39,7 +39,7 @@ export const createConnections = (id: string): NodeConnections => {
       return nodeConnections.size;
    };
 
-   const isConnectedTo = (node: BtcNode) => nodeConnections.has(node.id());
+   const isConnectedTo = (node: BtcNode) => nodeConnections.has(node.ip());
 
    const getAll = () => {
       const result = [];

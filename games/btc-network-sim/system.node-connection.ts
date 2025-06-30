@@ -108,7 +108,7 @@ const getClosestNodes = (props: closestNodeProps): BtcNode[] => {
 
    for (const currentNode of allNodes) {
       if (currentNode.connections().isConnectedTo(node)) continue;
-      if (currentNode.id() === node.id()) continue;
+      if (currentNode.ip() === node.ip()) continue;
       if (currentNode.connections().connectCount() >= 6) continue;
 
       const distance = calculateDistance(node.anim, currentNode.anim);

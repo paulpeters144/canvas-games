@@ -20,11 +20,9 @@ import type { EventMap } from "./util.events";
 export const bus = eBus<EventMap>();
 
 // TODO:
-// - randomly start btc with utxos
-// - randomly send txs to other nodes
-//    - may need to use the store to get a random node
-// - show some kind of animation - needs to be small - of a tx moving from 1 node to another
-// - transactions propagate from the sender of btc
+// - id's of the node need to be ips
+//    - need to create a method that gets a random ip numbers
+// - redesign the left-pane-ui in figma to match the controls
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
@@ -110,6 +108,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
       const prevDimen = game.getSize();
       resizer.resize(app, game);
       const nextDimen = game.getSize();
+
       const zoomedIn = nextDimen.height > prevDimen.height;
 
       const largerWidth = Math.max(prevDimen.width, nextDimen.width);
@@ -150,18 +149,18 @@ export const gameScene = (gameVars: GameVars): IScene => {
    bus.on("randSend", (e) => {
       try {
          const allNodes = store.data();
-         const receivingNode = allNodes.find((n) => n.id() === e.toId);
-         const sendingNode = allNodes.find((n) => n.id() === e.fromId);
+         const receivingNode = allNodes.find((n) => n.ip() === e.toId);
+         const sendingNode = allNodes.find((n) => n.ip() === e.fromId);
 
          if (!sendingNode || !receivingNode) return;
-         if (receivingNode.id() === e.fromId) return;
+         if (receivingNode.ip() === e.fromId) return;
 
          sendingNode.sendBtc({ units: e.units, node: receivingNode });
       } catch (_) {}
    });
 
    bus.on("newTx", (e) => {
-      const originNode = store.data().find((n) => n.id() === e.originId);
+      const originNode = store.data().find((n) => n.ip() === e.originId);
       if (!originNode) return;
       const connectingNodes = originNode.connections().getAll();
       connectingNodes.map((n) => {
@@ -202,9 +201,20 @@ export const gameScene = (gameVars: GameVars): IScene => {
             camera.lookAt(systemDrag?.getFocusPoint());
             bus.fire("node", { count: 19 });
 
-            for (let i = 0; i < 500; i++) {
-               setTimeout(() => bus.fire("zoom", "out"), i * 1.01);
-            }
+            // for (let i = 0; i < 500; i++) {
+            //    setTimeout(() => bus.fire("zoom", "out"), i * 1.01);
+            // }
+            camera?.setZoom(0.6);
+            systemDrag.setFocusPoint({
+               x: app.screen.width * 0.8,
+               y: app.screen.height * 0.92,
+            });
+
+            window.dispatchEvent(new CustomEvent("windowResize"));
+            camera?.lookAt(systemDrag?.getFocusPoint());
+            // for (let i = 0; i < 500; i++) {
+            //    setTimeout(() => bus.fire("zoom", "out"), i * 1.01);
+            // }
          }, 50);
 
          leftPaneCtrl = createLeftPaneControls(gameVars);

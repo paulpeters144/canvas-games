@@ -58,21 +58,21 @@ export const createSendTxSystem = (props: props): SendRandTxSystem => {
          });
          const units = standard.round(amount);
          bus.fire("randSend", {
-            fromId: randSendingNode.id(),
-            toId: randReceivingNode.id(),
+            fromId: randSendingNode.ip(),
+            toId: randReceivingNode.ip(),
             units,
          });
       } catch (_) {}
    };
 
    const sendBtcInterval = (() => {
-      let eventInterval = randNum({ min: 2000, max: 3000 });
+      let eventInterval = randNum({ min: 1500, max: 3000 });
       let currentTick = 0;
       return {
          update: (t: PIXI.Ticker) => {
             if (currentTick >= eventInterval) {
                currentTick = 0;
-               eventInterval = randNum({ min: 500, max: 3500 });
+               eventInterval = randNum({ min: 500, max: 3000 });
                fireRandomTx();
             }
             currentTick += t.deltaMS;

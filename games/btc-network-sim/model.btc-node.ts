@@ -6,6 +6,7 @@ import { type NodeConnections, createConnections } from "./model.connection";
 import { type Mempool, createMempool } from "./model.mempool";
 import { type BtcWallet, createBtcWallet } from "./model.wallet";
 import type { BlockTx, Position } from "./types";
+import { standard } from "./util";
 
 interface BtcNodeProps {
    gameVars: GameVars;
@@ -13,7 +14,7 @@ interface BtcNodeProps {
 }
 
 export interface BtcNode {
-   id: () => string;
+   ip: () => string;
    setRunning: (valueChange: boolean) => void;
    createdAt: () => Date;
    destroy: () => void;
@@ -27,15 +28,17 @@ export interface BtcNode {
    mempool: Mempool;
 }
 
+let WATCH_IP = "";
+
 export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    const { gameVars, pos } = props;
    const { game, assets } = gameVars;
 
    const createdAt = new Date();
-   const id = crypto.randomUUID().replaceAll("-", "").slice(0, 15);
+   const ip = standard.randomIp();
    const wallet: BtcWallet = createBtcWallet();
    const mempool: Mempool = createMempool();
-   const connections: NodeConnections = createConnections(id);
+   const connections: NodeConnections = createConnections(ip);
 
    const width = 37;
    const height = 43;
@@ -90,12 +93,15 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       const recAddr = node.wallet.addr();
       const tx = wallet.createTx({ units, recAddr });
       mempool.add(tx);
-      bus.fire("newTx", { originId: id, tx: tx });
+      bus.fire("newTx", { originId: ip, tx: tx });
    };
-
+   if (!WATCH_IP) WATCH_IP = ip;
    const receiveTx = (tx: BlockTx) => {
       if (mempool.hasTx(tx)) return false;
       mempool.add(tx);
+      if (ip === WATCH_IP) {
+         console.log(`ip: ${ip}`, tx);
+      }
       return true;
    };
 
@@ -111,14 +117,11 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       offNode.destroy();
    };
 
-   // const ui = constructUI(anim);
-   // game.addChild(ui);
-
    return {
       setRunning,
       anim,
       createdAt: () => createdAt,
-      id: () => id,
+      ip: () => ip,
       destroy,
       toRect,
       connections: () => connections,
@@ -140,8 +143,8 @@ const constructUI = (anim: PIXI.AnimatedSprite) => {
    buttonContainer.interactive = true;
    buttonContainer.visible = false;
 
-   const buttonWidth = 75;
-   const buttonHeight = 25;
+   const buttonWidth = 100;
+   const buttonHeight = 35;
    const buttonRadius = 5;
    const buttonPadding = 2;
    const numButtons = 3;
