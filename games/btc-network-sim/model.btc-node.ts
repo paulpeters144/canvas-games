@@ -6,7 +6,7 @@ import { type NodeConnections, createConnections } from "./model.connection";
 import { type Mempool, createMempool } from "./model.mempool";
 import { type BtcWallet, createBtcWallet } from "./model.wallet";
 import type { BlockTx, Position } from "./types";
-import { standard } from "./util";
+import { randNum, standard } from "./util";
 
 interface BtcNodeProps {
    gameVars: GameVars;
@@ -66,6 +66,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    anim.scale.set(scale);
    anim.animationSpeed = 0.07;
    anim.play();
+   anim.currentFrame = randNum({ min: 0, max: frames - 1 });
 
    anim.zIndex = ZLayer.mid;
    offNode.zIndex = ZLayer.mid;
@@ -100,7 +101,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       if (mempool.hasTx(tx)) return false;
       mempool.add(tx);
       if (ip === WATCH_IP) {
-         console.log(`ip: ${ip}`, tx);
+         // console.log(`ip: ${ip}`, tx);
       }
       return true;
    };
@@ -136,77 +137,4 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
          };
       },
    };
-};
-
-const constructUI = (anim: PIXI.AnimatedSprite) => {
-   const buttonContainer = new PIXI.Container();
-   buttonContainer.interactive = true;
-   buttonContainer.visible = false;
-
-   const buttonWidth = 100;
-   const buttonHeight = 35;
-   const buttonRadius = 5;
-   const buttonPadding = 2;
-   const numButtons = 3;
-
-   const totalButtonsHeight = numButtons * buttonHeight;
-   const totalPadding = (numButtons - 1) * buttonPadding;
-   const backgroundWidth = buttonWidth + buttonPadding * 2;
-   const backgroundHeight = totalButtonsHeight + totalPadding + buttonPadding * 2;
-
-   const bgGraphic = new PIXI.Graphics()
-      .rect(0, 0, backgroundWidth + 10, backgroundHeight)
-      .fill({ color: "#FFFFFF", alpha: 0.005 });
-
-   buttonContainer.addChild(bgGraphic);
-
-   for (let i = 0; i < 3; i++) {
-      const button = new PIXI.Graphics()
-         .roundRect(0, 0, buttonWidth, buttonHeight, buttonRadius)
-         .fill({ color: "#FF7518" });
-
-      button.x = buttonPadding + 8;
-      button.y = buttonPadding + i * (buttonHeight + buttonPadding);
-
-      button.interactive = true;
-
-      button.on("pointerdown", () => {
-         console.log(`Button ${i + 1} was clicked!`);
-      });
-
-      buttonContainer.addChild(button);
-   }
-
-   anim.interactive = true;
-   let isInAnim = false;
-   let isInCtr = false;
-
-   anim.on("pointerenter", (e) => {
-      isInAnim = true;
-      buttonContainer.x = anim.x + anim.width - 5;
-      buttonContainer.y = anim.y - 15;
-      buttonContainer.visible = true;
-   });
-
-   anim.on("pointerleave", () => {
-      isInAnim = false;
-      setTimeout(() => {
-         if (!isInAnim && !isInCtr) buttonContainer.visible = false;
-      }, 100);
-   });
-
-   buttonContainer.on("pointerleave", () => {
-      isInCtr = false;
-      setTimeout(() => {
-         if (!isInAnim && !isInCtr) buttonContainer.visible = false;
-      }, 100);
-   });
-
-   buttonContainer.on("pointerenter", () => {
-      isInCtr = true;
-   });
-
-   buttonContainer.zIndex = ZLayer.mid;
-
-   return buttonContainer;
 };

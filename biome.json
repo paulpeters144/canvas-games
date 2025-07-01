@@ -39,7 +39,7 @@
             },
             "noEmptyInterface": {
                "level": "warn",
-               "fix": "safe"
+               "fix": "none"
             }
          },
          "correctness": {

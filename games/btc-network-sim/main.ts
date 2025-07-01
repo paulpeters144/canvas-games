@@ -13,16 +13,20 @@ import {
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
 import { type SendRandTxSystem, createSendTxSystem } from "./system.send-txs";
 import { createBackground } from "./ui.background";
-import { type LeftPaneCtrl, createLeftPaneControls } from "./ui.left-pane";
+import {} from "./ui.left-pane";
 import { setMouseImages } from "./ui.mouse";
+import { type NodeCounterUI, createNodeCounterUI } from "./ui.node-ctrl";
 import type { EventMap } from "./util.events";
+import { createInputCtrl } from "./util.input-ctrl";
 
 export const bus = eBus<EventMap>();
 
 // TODO:
-// - id's of the node need to be ips
-//    - need to create a method that gets a random ip numbers
-// - redesign the left-pane-ui in figma to match the controls
+// - camera updates
+//    - create a controller for the camera
+//       - only use the ctrl for the camera
+//    - move camera from points a to b smoothly
+//    - use ctrl + "+/-" for zoom in an out, like in figma
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
@@ -40,11 +44,9 @@ export interface IScene {
 export const newSceneEngine = (gameVars: GameVars) => {
    let gameTicker: PIXI.Ticker | undefined;
    let currentScene: IScene | undefined;
-   const { game, app, resizer } = gameVars;
+   const { game, app } = gameVars;
 
    app.stage.addChild(game);
-
-   setTimeout(() => resizer.resize(app, game), 0);
 
    return {
       next: async (nextScene: () => IScene) => {
@@ -75,32 +77,48 @@ export const gameScene = (gameVars: GameVars): IScene => {
    let systemSendRandTx: SendRandTxSystem | undefined;
 
    let camera: Camera | undefined;
-   let leftPaneCtrl: LeftPaneCtrl | undefined;
+   // let leftPaneCtrl: LeftPaneCtrl | undefined;
+   let nodeCounterUI: NodeCounterUI | undefined;
    const store: NodeStore = createNodeStore();
    const factory: NodeFactory = createNodeFactory({ gameVars, store });
+   const inputCtrl = createInputCtrl();
 
    const background = createBackground({ rows: 30, cols: 46 });
 
-   const sendResizeEvent = () =>
+   const sendResizeEvent = () => {
       window.dispatchEvent(new CustomEvent("windowResize"));
+   };
 
-   window.addEventListener("resize", () => sendResizeEvent);
+   // setTimeout(() => window.dispatchEvent(new CustomEvent("windowResize")), 100);
 
-   const windowResize = () =>
-      setTimeout(() => {
-         resizer.resize(app, game);
-         camera?.lookAt(systemDrag?.getFocusPoint());
-      }, 10);
+   const preventCtxMenu = (e: MouseEvent) => e.preventDefault();
 
+   const windowResize = () => {
+      resizer.resize(app, game);
+      // camera?.lookAt(systemDrag?.getFocusPoint());
+      nodeCounterUI?.resize();
+   };
+
+   window.addEventListener("resize", () => setTimeout(sendResizeEvent, 0));
    window.addEventListener("windowResize", windowResize);
-
-   app.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+   app.canvas.addEventListener("contextmenu", preventCtxMenu);
    app.stage.interactive = true;
+
    setMouseImages(app);
+
+   window.addEventListener("gameModal", () => {
+      inputCtrl.destroy();
+      bus.clear();
+      try {
+         window.removeEventListener("resize", sendResizeEvent);
+         window.removeEventListener("windowResize", windowResize);
+         app.canvas.removeEventListener("contextmenu", preventCtxMenu);
+      } catch (_) {}
+   });
 
    bus.on("zoom", (e) => {
       if (!systemDrag || !camera) return;
-      const deltaZoom = 0.001;
+      const deltaZoom = 0.002;
       if (e === "in") camera.zoom(deltaZoom);
       if (e === "out") camera.zoom(-deltaZoom);
       if (e === "reset") camera.resetZoom();
@@ -194,6 +212,8 @@ export const gameScene = (gameVars: GameVars): IScene => {
          systemMoveTx = createTxMessageSystem(gameVars);
          systemSendRandTx = createSendTxSystem({ store });
 
+         nodeCounterUI = createNodeCounterUI({ gameVars });
+
          setTimeout(() => {
             if (!systemDrag || !camera) return;
             const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
@@ -201,9 +221,6 @@ export const gameScene = (gameVars: GameVars): IScene => {
             camera.lookAt(systemDrag?.getFocusPoint());
             bus.fire("node", { count: 19 });
 
-            // for (let i = 0; i < 500; i++) {
-            //    setTimeout(() => bus.fire("zoom", "out"), i * 1.01);
-            // }
             camera?.setZoom(0.6);
             systemDrag.setFocusPoint({
                x: app.screen.width * 0.8,
@@ -212,17 +229,14 @@ export const gameScene = (gameVars: GameVars): IScene => {
 
             window.dispatchEvent(new CustomEvent("windowResize"));
             camera?.lookAt(systemDrag?.getFocusPoint());
-            // for (let i = 0; i < 500; i++) {
-            //    setTimeout(() => bus.fire("zoom", "out"), i * 1.01);
-            // }
          }, 50);
 
-         leftPaneCtrl = createLeftPaneControls(gameVars);
+         // leftPaneCtrl = createLeftPaneControls(gameVars);
       },
 
       update: (tick: PIXI.Ticker) => {
+         nodeCounterUI?.update(tick);
          camera?.update(tick);
-         leftPaneCtrl?.update(tick);
          if (systemDrag?.isDragging()) {
             camera?.lookAt(systemDrag?.getFocusPoint());
          }

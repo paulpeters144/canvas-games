@@ -9,7 +9,10 @@ import type { Route } from "./+types/home";
 export function meta({}: Route.MetaArgs) {
    return [
       { title: "Canvas Games" },
-      { name: "description", content: "Just here to learn making games with the canvas" },
+      {
+         name: "description",
+         content: "Just here to learn making games with the canvas",
+      },
    ];
 }
 
@@ -63,15 +66,22 @@ export default function Home() {
          <div id="about" />
          <div className="px-8">
             <div className="flex items-center mt-[8rem]">
-               <img className="mr-5" src={"assets/vr-boy.png"} alt="boy vr headset" />
-               <h1 className="font-font md:text-xl sm:text-md font-bold text-white">About</h1>
+               <img
+                  className="mr-5"
+                  src={"assets/vr-boy.png"}
+                  alt="boy vr headset"
+               />
+               <h1 className="font-font md:text-xl sm:text-md font-bold text-white">
+                  About
+               </h1>
             </div>
             <div className="w-full flex justify-center mt-3">
                <div className="max-w-[50rem] text-gray-200">
                   <div>
-                     Welcome! This site is a personal project where I'm collecting and showcasing
-                     projects I've built as part of my learning journey. Think of it as my digital
-                     playground for exploring game development and various html canvas ideas.
+                     Welcome! This site is a personal project where I'm collecting
+                     and showcasing projects I've built as part of my learning
+                     journey. Think of it as my digital playground for exploring game
+                     development and various html canvas ideas.
                   </div>
                   <div className="mt-8">Thanks for stopping by!</div>
                </div>
@@ -81,7 +91,9 @@ export default function Home() {
          <div className="px-8">
             <div className="flex items-center mt-[8rem]">
                <img className="mr-5" src={"assets/rocket.png"} alt="rocket ship" />
-               <h1 className="font-font md:text-xl sm:text-md font-bold text-white">Collection</h1>
+               <h1 className="font-font md:text-xl sm:text-md font-bold text-white">
+                  Collection
+               </h1>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
@@ -118,8 +130,10 @@ export default function Home() {
                            <GameModal
                               createGame={game.init}
                               onClose={() => {
-                                 if (location.hash.includes("collection")) navigate("#collection");
+                                 if (location.hash.includes("collection"))
+                                    navigate("#collection");
                                  else setSearchParams("");
+                                 window.dispatchEvent(new CustomEvent("gameModal"));
                               }}
                            />
                         )}
@@ -149,7 +163,11 @@ function AppHeader() {
          <div className="bg-gray-800 py-6 rounded-b-lg">
             <div className="grid grid-cols-2 px-8">
                <div className="flex items-center col-start-1">
-                  <img className="mr-5 w-8 h-8" src={"assets/pixel-earth.png"} alt="pixel earth" />
+                  <img
+                     className="mr-5 w-8 h-8"
+                     src={"assets/pixel-earth.png"}
+                     alt="pixel earth"
+                  />
                   <h1 className="font-font md:text-xl sm:text-md font-bold sm:block hidden text-white">
                      Canvas Game
                   </h1>
@@ -171,9 +189,15 @@ function AppHeader() {
    );
 }
 
-export function GameCard({ title, onClick }: { title: string; onClick: () => void }) {
+export function GameCard({
+   title,
+   onClick,
+}: { title: string; onClick: () => void }) {
    return (
-      <div onClick={onClick} className="p-4 bg-gray-800 shadow rounded hover:scale-105 transition">
+      <div
+         onClick={onClick}
+         className="p-4 bg-gray-800 shadow rounded hover:scale-105 transition"
+      >
          <h2 className="text-lg font-semibold">{title}</h2>
       </div>
    );
@@ -207,7 +231,7 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
 
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
-   }, []);
+   }, [appRef]);
 
    useEffect(() => {
       const init = async () => {
@@ -236,8 +260,11 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
             appRef.current.destroy(true);
             appRef.current = null;
          }
+         if (containerRef.current) {
+            containerRef.current = null;
+         }
       };
-   }, [createGame, isMobileDevice]);
+   }, [createGame, isMobileDevice, appRef]);
 
    const toggleFullscreen = () => {
       if (!document.fullscreenElement) {
@@ -254,8 +281,14 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
    const maxWidthBasedOnHeight = windowDimensions.height * (16 / 9);
 
    return (
-      <div ref={wrapperRef} className="fixed inset-0 flex items-center justify-center z-50">
-         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div
+         ref={wrapperRef}
+         className="fixed inset-0 flex items-center justify-center z-50"
+      >
+         <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={onClose}
+         />
 
          <div
             style={{
@@ -290,13 +323,16 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
             {isSmallScreen && (
                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-center p-4 rounded">
                   <p className="text-lg font-medium">
-                     Uh oh... looks like you're on mobile. Only can play the games on a desktop for
-                     now.
+                     Uh oh... looks like you're on mobile. Only can play the games on
+                     a desktop for now.
                   </p>
                </div>
             )}
             {!isSmallScreen && (
-               <div ref={containerRef} className="w-full h-full overflow-hidden rounded" />
+               <div
+                  ref={containerRef}
+                  className="w-full h-full overflow-hidden rounded"
+               />
             )}
          </div>
       </div>
@@ -312,8 +348,8 @@ export function AppFooter() {
                   <span className="text-xl font-bold text-white">Canvas Games</span>
                </div>
                <p className="mt-4 text-sm text-gray-400">
-                  A collection of experimental HTML canvas games built with curiosity and a bit of
-                  pixel dust.
+                  A collection of experimental HTML canvas games built with curiosity
+                  and a bit of pixel dust.
                </p>
             </div>
             <div className="md:col-start-3 md:text-right">
@@ -370,7 +406,10 @@ function useGameIsFullScreen() {
 
       return () => {
          document.removeEventListener("fullscreenchange", handleFullscreenChange);
-         document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+         document.removeEventListener(
+            "webkitfullscreenchange",
+            handleFullscreenChange,
+         );
          document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
          document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
       };
@@ -397,5 +436,7 @@ function usePreventArrowScroll() {
 }
 
 function isMobileDevice() {
-   return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+   return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+   );
 }
