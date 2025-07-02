@@ -117,7 +117,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
          await assets.load();
          game.addChild(background.graphic);
          background.texts.map((t) => game.addChild(t));
-         game.addChild(focusSquare);
+         game.addChild(focusSquare, yellowSquare, redSquare);
          setTimeout(() => {
             focusSquare.position.set(game.width * 0.5, game.height * 0.5);
          }, 50);
@@ -135,6 +135,8 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
             x: focusSquare.x + focusSquare.width * 0.5,
             y: focusSquare.y + focusSquare.height * 0.5,
          });
+         redSquare.position.set(camera.zeroPos().x, camera.zeroPos().y);
+         yellowSquare.position.set(camera.centerPos().x, camera.centerPos().y);
       },
    };
 };

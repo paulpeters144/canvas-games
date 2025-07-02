@@ -89,6 +89,8 @@ export interface Camera {
    lookAt: (pos?: Position) => void;
    update: (tick: PIXI.Ticker) => void;
    zoomAdd: (amount: number) => void;
+   zeroPos: () => Position;
+   centerPos: () => Position;
 }
 
 export const createCamera = (props: CameraProps): Camera => {
@@ -97,6 +99,21 @@ export const createCamera = (props: CameraProps): Camera => {
 
    let viewport = { width: 0, height: 0 };
    let zoomDelta = 0;
+
+   const zeroPos = (): Position => {
+      return {
+         x: -game.position.x,
+         y: -game.position.y,
+      };
+   };
+
+   const centerPos = (): Position => {
+      const zero = zeroPos();
+      return {
+         x: zero.x + viewport.width * 0.5,
+         y: zero.y + viewport.height * 0.5,
+      };
+   };
 
    const zoomAdd = (amount: number) => {
       zoomDelta = amount;
@@ -141,6 +158,8 @@ export const createCamera = (props: CameraProps): Camera => {
    };
 
    return {
+      centerPos,
+      zeroPos,
       lookAt,
       update,
       zoomAdd,
