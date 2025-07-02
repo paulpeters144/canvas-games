@@ -9,7 +9,11 @@ export const createBackground = ({ rows, cols }: { rows: number; cols: number })
    graphic.zIndex = ZLayer.bottom;
    const texts: PIXI.Text[] = [];
 
-   const style = new PIXI.TextStyle({ fontFamily: "GraphPix", fontSize: 8 });
+   const style = new PIXI.TextStyle({
+      fill: "#FFFFFF",
+      fontFamily: "GraphPix",
+      fontSize: 8,
+   });
 
    for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
