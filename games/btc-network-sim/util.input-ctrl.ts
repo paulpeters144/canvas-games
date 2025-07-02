@@ -73,10 +73,8 @@ export const createInputCtrl = () => {
 
    const wheelListener = (event: WheelEvent) => {
       event.preventDefault();
-      if (event.ctrlKey) {
-         if (event.deltaY > 0) bus.fire("zoom", "out");
-         if (event.deltaY < 0) bus.fire("zoom", "in");
-      }
+      if (event.deltaY > 0) bus.fire("zoom", "out");
+      if (event.deltaY < 0) bus.fire("zoom", "in");
    };
 
    const pressDownListener = (event: KeyboardEvent) => {

@@ -1,3 +1,4 @@
+import { OutlineFilter } from "pixi-filters";
 import * as PIXI from "pixi.js";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
@@ -15,7 +16,6 @@ interface BtcNodeProps {
 
 export interface BtcNode {
    ip: () => string;
-   setRunning: (valueChange: boolean) => void;
    createdAt: () => Date;
    destroy: () => void;
    toRect: () => PIXI.Rectangle;
@@ -46,10 +46,6 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    const scale = 1.25;
 
    const texture = assets.getTexture("server-anim-coin");
-   const offNode = assets.createSprite("server-off");
-   offNode.texture.source.scaleMode = "nearest";
-   offNode.visible = false;
-   offNode.scale.set(scale);
 
    let buffer = 0;
    const textures = Array.from({ length: frames }, (_, i) => {
@@ -68,22 +64,26 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    anim.play();
    anim.currentFrame = randNum({ min: 0, max: frames - 1 });
 
+   const filter = new OutlineFilter({ thickness: 2, color: "#FFFFFF" });
+   anim.interactive = true;
+   anim.on("pointerenter", () => {
+      anim.filters = [filter];
+      anim.cursor = "pointer";
+      // console.log("anim pos", anim.position);
+   });
+   anim.on("pointerdown", () => {
+      // TODO: some event will need to go here
+   });
+   anim.on("pointerleave", () => {
+      anim.filters = [];
+      anim.cursor = "default";
+   });
+
    anim.zIndex = ZLayer.mid;
-   offNode.zIndex = ZLayer.mid;
    game.addChild(anim);
-   game.addChild(offNode);
 
    anim.x = pos ? pos.x - anim.width * 0.5 : 0;
    anim.y = pos ? pos.y - anim.height * 0.5 : 0;
-
-   const setRunning = (valueChange: boolean) => {
-      anim.visible = valueChange;
-      offNode.visible = !valueChange;
-
-      valueChange === true
-         ? anim.position.set(anim.x, anim.y)
-         : offNode.position.set(anim.x, anim.y);
-   };
 
    const toRect = () => {
       return new PIXI.Rectangle(anim.x, anim.y, anim.width, anim.height);
@@ -111,15 +111,9 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
          anim.parent.removeChild(anim);
       }
       anim.destroy();
-
-      if (offNode.parent) {
-         offNode.parent.removeChild(offNode);
-      }
-      offNode.destroy();
    };
 
    return {
-      setRunning,
       anim,
       createdAt: () => createdAt,
       ip: () => ip,

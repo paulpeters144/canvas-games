@@ -131,7 +131,10 @@ export interface Camera {
    zoom: (value: number) => void;
    setZoom: (value: number) => void;
    resetZoom: () => void;
+   moveTo: (pos: Position, speed?: number) => void;
+   getCameraCenter: () => Position;
    update: (tick: PIXI.Ticker) => void;
+   atTargetPos: () => boolean;
 }
 
 export const createCamera = (props: CameraProps): Camera => {
@@ -148,6 +151,9 @@ export const createCamera = (props: CameraProps): Camera => {
    const setZoom = (value: number) => scaler.setZoom(value);
 
    const resetZoom = () => scaler.setZoom(1);
+
+   let targetPos: Position | null = null;
+   let moveSpeed = 0.1; // pixels per ms (adjust as needed)
 
    const lookAt = (pos?: { x: number; y: number }) => {
       try {
@@ -174,10 +180,63 @@ export const createCamera = (props: CameraProps): Camera => {
       } catch (_) {}
    };
 
+   const getCameraCenter = (): Position => {
+      const screenCenterX = app.screen.width * 0.5;
+      const screenCenterY = app.screen.height * 0.5;
+
+      const worldX = -game.position.x + screenCenterX;
+      const worldY = -game.position.y + screenCenterY;
+
+      return {
+         x: worldX / scaler.getGameScale(),
+         y: worldY / scaler.getGameScale(),
+      };
+   };
+
+   const moveTo = (pos: Position, speed = 0.1) => {
+      targetPos = { x: pos.x, y: pos.y };
+      moveSpeed = speed;
+   };
+
    const update = (tick: PIXI.Ticker) => {
       if (zoomAmount !== 0) {
          scaler.zoom(zoomAmount * tick.deltaMS);
          zoomAmount = 0;
+      }
+
+      if (targetPos) {
+         viewport.width = app.screen.width;
+         viewport.height = app.screen.height;
+
+         let desiredX = -targetPos.x + viewport.width * 0.5;
+         let desiredY = -targetPos.y + viewport.height * 0.5;
+
+         if (clampCamera) {
+            const boundsWidth = bounds.width * scaler.getGameScale();
+            const minX = -(boundsWidth - viewport.width);
+            const maxX = 0;
+            desiredX = Math.min(Math.max(desiredX, minX), maxX);
+
+            const boundsHeight = bounds.height * scaler.getGameScale();
+            const minY = -(boundsHeight - viewport.height);
+            const maxY = 0;
+            desiredY = Math.min(Math.max(desiredY, minY), maxY);
+         }
+
+         const dx = desiredX - game.position.x;
+         const dy = desiredY - game.position.y;
+         const dist = Math.sqrt(dx * dx + dy * dy);
+
+         const step = moveSpeed * tick.deltaMS;
+
+         if (dist < step) {
+            game.position.set(desiredX, desiredY);
+            targetPos = null; // Reached
+         } else {
+            const ratio = step / dist;
+            game.position.x += dx * ratio;
+            game.position.y += dy * ratio;
+         }
       }
    };
 
@@ -187,6 +246,9 @@ export const createCamera = (props: CameraProps): Camera => {
       zoom,
       resetZoom,
       update,
+      moveTo,
+      getCameraCenter,
       setZoom,
+      atTargetPos: () => targetPos === null,
    };
 };

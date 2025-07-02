@@ -13,7 +13,6 @@ import {
 import { type DragSystem, createDragSystem } from "./system.pointer-drag";
 import { type SendRandTxSystem, createSendTxSystem } from "./system.send-txs";
 import { createBackground } from "./ui.background";
-import {} from "./ui.left-pane";
 import { setMouseImages } from "./ui.mouse";
 import { type NodeCounterUI, createNodeCounterUI } from "./ui.node-ctrl";
 import type { EventMap } from "./util.events";
@@ -48,6 +47,13 @@ export const newSceneEngine = (gameVars: GameVars) => {
 
    app.stage.addChild(game);
 
+   app.stage.addEventListener("pointermove", (e) => {
+      gameVars.mouse.setPos({
+         x: e.screenX / gameVars.scaler.getBaseScale(),
+         y: e.screenY / gameVars.scaler.getBaseScale(),
+      });
+   });
+
    return {
       next: async (nextScene: () => IScene) => {
          game.removeChildren();
@@ -77,7 +83,6 @@ export const gameScene = (gameVars: GameVars): IScene => {
    let systemSendRandTx: SendRandTxSystem | undefined;
 
    let camera: Camera | undefined;
-   // let leftPaneCtrl: LeftPaneCtrl | undefined;
    let nodeCounterUI: NodeCounterUI | undefined;
    const store: NodeStore = createNodeStore();
    const factory: NodeFactory = createNodeFactory({ gameVars, store });
@@ -89,13 +94,10 @@ export const gameScene = (gameVars: GameVars): IScene => {
       window.dispatchEvent(new CustomEvent("windowResize"));
    };
 
-   // setTimeout(() => window.dispatchEvent(new CustomEvent("windowResize")), 100);
-
    const preventCtxMenu = (e: MouseEvent) => e.preventDefault();
 
    const windowResize = () => {
       resizer.resize(app, game);
-      // camera?.lookAt(systemDrag?.getFocusPoint());
       nodeCounterUI?.resize();
    };
 
@@ -115,6 +117,21 @@ export const gameScene = (gameVars: GameVars): IScene => {
          app.canvas.removeEventListener("contextmenu", preventCtxMenu);
       } catch (_) {}
    });
+
+   // setTimeout(() => {
+   //    const firstNode = store.data()[0].anim;
+   //    const pos = {
+   //       x:
+   //          (firstNode.x + firstNode.width * 0.5) * gameVars.scaler.getGameScale() +
+   //          100,
+   //       y:
+   //          (firstNode.y + firstNode.height * 0.5) * gameVars.scaler.getGameScale() +
+   //          30,
+   //    };
+   //    systemDrag?.setFocusPoint(pos);
+
+   //    camera?.moveTo(pos, 1.5);
+   // }, 2500);
 
    bus.on("zoom", (e) => {
       if (!systemDrag || !camera) return;
@@ -136,7 +153,6 @@ export const gameScene = (gameVars: GameVars): IScene => {
       const largerHeight = Math.max(prevDimen.height, nextDimen.height);
       const smallerHeight = Math.min(prevDimen.height, nextDimen.height);
       const diffHeight = smallerHeight / largerHeight;
-
       const dragPos = systemDrag.getFocusPoint();
       const nextPos = {
          x: zoomedIn ? dragPos.x / diffWidth : dragPos.x * diffWidth,
@@ -145,6 +161,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
       systemDrag.setFocusPoint(nextPos);
 
       camera?.lookAt(systemDrag?.getFocusPoint());
+      // camera?.lookAt(pos);
    });
 
    bus.on("node", (e) => {
@@ -198,7 +215,7 @@ export const gameScene = (gameVars: GameVars): IScene => {
          camera = createCamera({
             gameVars,
             bounds: background.size,
-            clampCamera: false,
+            clampCamera: true,
          });
          systemDrag = createDragSystem({
             gameVars,
