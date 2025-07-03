@@ -1,4 +1,5 @@
 import { eBus } from "games/util/event-bus";
+import type { Viewport } from "pixi-viewport";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { type NodeFactory, createNodeFactory } from "./factory.node";
@@ -84,6 +85,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
       factory,
       systemNodeConnect,
       systemMoveTx,
+      camera,
    });
 
    return {
@@ -121,13 +123,27 @@ const createBusListeningEvents = (props: {
    factory: NodeFactory;
    systemNodeConnect?: ConnectionSystem;
    systemMoveTx?: TxMessageSystem;
+   camera: Viewport;
 }) => {
-   const { systemNodeConnect, systemMoveTx, store, factory } = props;
+   const { systemNodeConnect, systemMoveTx, store, factory, camera } = props;
 
    bus.on("node", (e) => {
       if (e.count > store.count()) {
          while (e.count > store.count()) {
             const newNode = factory.create();
+
+            newNode.anim.on("pointerdown", () => {
+               camera.animate({
+                  time: 350,
+                  position: {
+                     x: newNode.anim.x + 85,
+                     y: newNode.anim.y + 35,
+                  },
+                  scale: 3.85,
+                  ease: "linear",
+               });
+            });
+
             store.push(newNode);
             systemNodeConnect?.setup();
          }
