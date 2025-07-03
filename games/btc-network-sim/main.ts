@@ -5,7 +5,6 @@ import { createGameAssets } from "./assets";
 import { type NodeFactory, createNodeFactory } from "./factory.node";
 import { ZLayer } from "./game.enums";
 import { type GameVars, createGameVars } from "./game.vars";
-import { createViewport } from "./main.test.viewport";
 import { type NodeStore, createNodeStore } from "./store.nodes";
 import { type TxMessageSystem, createTxMessageSystem } from "./system.move-tx";
 import {
@@ -16,6 +15,7 @@ import { createSendTxSystem } from "./system.send-txs";
 import { createBackground } from "./ui.background";
 import { setMouseImages } from "./ui.mouse";
 import { createNodeCounterUI } from "./ui.node-ctrl";
+import { createViewport } from "./util.camera";
 import type { EventMap } from "./util.events";
 
 export const bus = eBus<EventMap>();
@@ -67,10 +67,10 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
    const camera = createViewport(app, game);
    const background = createBackground({
       rows: 20,
-      cols: 40,
+      cols: 41,
       // displayGridCords: true,
    });
-   const nodeCountUI = createNodeCounterUI();
+   const nodeCountUI = createNodeCounterUI(app);
    const store = createNodeStore();
    const factory = createNodeFactory({ gameVars, store });
    const systemNodeConnect = createNodeConnectionSystem({ gameVars, store });
@@ -102,7 +102,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
                   x: camera.worldWidth / 2,
                   y: camera.worldHeight / 2 - 10,
                },
-               scale: 1.45,
+               scale: 1.15,
                ease: "linear",
             });
             bus.fire("node", { count: 19 });

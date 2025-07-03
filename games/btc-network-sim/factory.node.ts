@@ -55,7 +55,7 @@ const getSurroundingPos = (node: BtcNode) => {
    };
 
    const blockSize = 1;
-   const distanceFromNode = 133;
+   const distanceFromNode = 135;
 
    const nodeCenterX = node.anim.x + node.anim.width * 0.5;
    const nodeCenterY = node.anim.y + node.anim.height * 0.5;

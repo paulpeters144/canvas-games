@@ -9,7 +9,7 @@ export interface NodeCounterUI {
    ctr: PIXI.Container;
 }
 
-export const createNodeCounterUI = (): NodeCounterUI => {
+export const createNodeCounterUI = (app: PIXI.Application): NodeCounterUI => {
    const ctr = new PIXI.Container();
 
    const bgGraphic = new PIXI.Graphics();
@@ -84,6 +84,17 @@ export const createNodeCounterUI = (): NodeCounterUI => {
       bus.fire("node", { count: currentNodeCount });
    };
    adjustNodeCountText();
+
+   const containerInPlace = () => {
+      if (ctr.x !== app.stage.width - ctr.width) return false;
+      if (ctr.y !== app.stage.height * 0.275) return false;
+      return true;
+   };
+
+   const adjustCtrPos = () => {
+      ctr.x = app.stage.width - ctr.width - 500;
+      ctr.y = app.stage.height * 0.275;
+   };
 
    const update = (_: PIXI.Ticker) => {
       if (continueTillMax) {

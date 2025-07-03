@@ -43,7 +43,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    const width = 37;
    const height = 43;
    const frames = 5;
-   const scale = 0.9;
+   const scale = 1;
 
    const texture = assets.getTexture("server-anim-coin");
 
