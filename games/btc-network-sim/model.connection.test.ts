@@ -24,11 +24,7 @@ const createGameAssetsMock = (): GameAssets => {
 };
 
 test("nodeConnection", () => {
-   const gameVars = createGameVars(
-      new PIXI.Container(),
-      new PIXI.Container(),
-      createGameAssetsMock(),
-   );
+   const gameVars = createGameVars(new PIXI.Container(), createGameAssetsMock());
    const nodes = Array.from({ length: 5 }).map(() => {
       const n = createBtcNode({ gameVars });
       n.wallet.setNewUTXOs(createUTXOs(20));
