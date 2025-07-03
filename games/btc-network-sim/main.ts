@@ -134,13 +134,13 @@ const createBusListeningEvents = (props: {
 
             newNode.anim.on("pointerdown", () => {
                camera.animate({
-                  time: 350,
+                  time: 450,
                   position: {
                      x: newNode.anim.x + 85,
                      y: newNode.anim.y + 35,
                   },
                   scale: 3.85,
-                  ease: "linear",
+                  ease: "easeInOutSine",
                });
             });
 
