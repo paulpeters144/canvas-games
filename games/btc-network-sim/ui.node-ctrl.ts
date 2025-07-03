@@ -1,23 +1,15 @@
 import * as PIXI from "pixi.js";
-import type { GameVars } from "./game.vars";
 import { bus } from "./main";
 import type { Position } from "./types";
 import { color } from "./ui.colors";
 import { BtnState } from "./util.input-ctrl";
 
 export interface NodeCounterUI {
-   resize: () => void;
    update: (tick: PIXI.Ticker) => void;
+   ctr: PIXI.Container;
 }
 
-interface nodeCounterProps {
-   gameVars: GameVars;
-}
-
-export const createNodeCounterUI = (props: nodeCounterProps): NodeCounterUI => {
-   const { gameVars } = props;
-   const { app, scaler } = gameVars;
-
+export const createNodeCounterUI = (): NodeCounterUI => {
    const ctr = new PIXI.Container();
 
    const bgGraphic = new PIXI.Graphics();
@@ -76,17 +68,6 @@ export const createNodeCounterUI = (props: nodeCounterProps): NodeCounterUI => {
       minusBtn.ctr,
       minBtn.ctr,
    );
-   app.stage.addChild(ctr);
-
-   const handleResize = () => {
-      ctr.width = bgWidth * scaler.getGameScale();
-      ctr.height = bgHeight * scaler.getGameScale();
-      ctr.x = app.screen.width - ctr.width;
-      ctr.y = app.screen.height * 0.5 - ctr.height * 0.5;
-      ctr.y -= 50;
-   };
-
-   handleResize();
 
    const nodeAmountBounds = {
       min: 1,
@@ -155,7 +136,7 @@ export const createNodeCounterUI = (props: nodeCounterProps): NodeCounterUI => {
    };
 
    return {
-      resize: handleResize,
+      ctr: ctr,
       update: update,
    };
 };

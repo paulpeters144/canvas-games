@@ -33,7 +33,7 @@ export const createNodeConnectionSystem = (
       };
       const line = new PIXI.Graphics();
 
-      const lineDotRadius = 2;
+      const lineDotRadius = 1.5;
       const dotSpacing = lineDotRadius * 7.5;
       const lineColor = "#FFFFFF";
 

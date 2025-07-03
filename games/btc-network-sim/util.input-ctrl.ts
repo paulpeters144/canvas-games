@@ -71,6 +71,11 @@ export const createInputCtrl = () => {
    const zoomIn = new BtnState();
    const zoomOut = new BtnState();
 
+   const upArrow = new BtnState();
+   const downArrow = new BtnState();
+   const leftArrow = new BtnState();
+   const rightArrow = new BtnState();
+
    const wheelListener = (event: WheelEvent) => {
       event.preventDefault();
       if (event.deltaY > 0) bus.fire("zoom", "out");
@@ -92,6 +97,22 @@ export const createInputCtrl = () => {
             event.preventDefault();
             zoomOut.press();
             break;
+         case "ArrowUp":
+            event.preventDefault();
+            upArrow.press();
+            break;
+         case "ArrowDown":
+            event.preventDefault();
+            downArrow.press();
+            break;
+         case "ArrowLeft":
+            event.preventDefault();
+            leftArrow.press();
+            break;
+         case "ArrowRight":
+            event.preventDefault();
+            rightArrow.press();
+            break;
       }
    };
 
@@ -106,6 +127,18 @@ export const createInputCtrl = () => {
             break;
          case "-":
             zoomOut.release();
+            break;
+         case "ArrowUp":
+            upArrow.release();
+            break;
+         case "ArrowDown":
+            downArrow.release();
+            break;
+         case "ArrowLeft":
+            leftArrow.release();
+            break;
+         case "ArrowRight":
+            rightArrow.release();
             break;
       }
    };
@@ -124,5 +157,9 @@ export const createInputCtrl = () => {
       zoomIn,
       zoomOut,
       destroy,
+      upArrow,
+      rightArrow,
+      downArrow,
+      leftArrow,
    };
 };

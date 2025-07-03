@@ -25,7 +25,7 @@ const createGameAssetsMock = (): GameAssets => {
 
 test("nodeConnection", () => {
    const gameVars = createGameVars(
-      new PIXI.Application(),
+      new PIXI.Container(),
       new PIXI.Container(),
       createGameAssetsMock(),
    );

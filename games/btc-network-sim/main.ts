@@ -1,31 +1,30 @@
 import { eBus } from "games/util/event-bus";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
-import { type Camera, createCamera } from "./camera";
 import { type NodeFactory, createNodeFactory } from "./factory.node";
+import { ZLayer } from "./game.enums";
 import { type GameVars, createGameVars } from "./game.vars";
+import { createViewport } from "./main.test.viewport";
 import { type NodeStore, createNodeStore } from "./store.nodes";
 import { type TxMessageSystem, createTxMessageSystem } from "./system.move-tx";
 import {
    type ConnectionSystem,
    createNodeConnectionSystem,
 } from "./system.node-connection";
-import { type DragSystem, createDragSystem } from "./system.pointer-drag";
-import { type SendRandTxSystem, createSendTxSystem } from "./system.send-txs";
+import { createSendTxSystem } from "./system.send-txs";
 import { createBackground } from "./ui.background";
 import { setMouseImages } from "./ui.mouse";
-import { type NodeCounterUI, createNodeCounterUI } from "./ui.node-ctrl";
+import { createNodeCounterUI } from "./ui.node-ctrl";
 import type { EventMap } from "./util.events";
-import { createInputCtrl } from "./util.input-ctrl";
 
 export const bus = eBus<EventMap>();
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
    const assets = createGameAssets();
-   const gameVars = createGameVars(app, game, assets);
-   const sceneEngine = newSceneEngine(gameVars);
-   sceneEngine.next(() => gameScene(gameVars));
+   const gameVars = createGameVars(game, assets);
+   const sceneEngine = newSceneEngine(gameVars, app);
+   sceneEngine.next(() => gameScene(gameVars, app));
 }
 
 export interface IScene {
@@ -33,19 +32,12 @@ export interface IScene {
    update: (tick: PIXI.Ticker) => void;
 }
 
-export const newSceneEngine = (gameVars: GameVars) => {
+export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
    let gameTicker: PIXI.Ticker | undefined;
    let currentScene: IScene | undefined;
-   const { game, app } = gameVars;
-
+   const { game } = gameVars;
+   game.zIndex = ZLayer.bottom;
    app.stage.addChild(game);
-
-   app.stage.addEventListener("pointermove", (e) => {
-      gameVars.mouse.setPos({
-         x: e.screenX / gameVars.scaler.getBaseScale(),
-         y: e.screenY / gameVars.scaler.getBaseScale(),
-      });
-   });
 
    return {
       next: async (nextScene: () => IScene) => {
@@ -67,146 +59,70 @@ export const newSceneEngine = (gameVars: GameVars) => {
    };
 };
 
-export const gameScene = (gameVars: GameVars): IScene => {
-   const { game, app, assets, resizer } = gameVars;
+export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => {
+   const { game, assets } = gameVars;
 
-   let systemDrag: DragSystem | undefined;
-   let systemNodeConnect: ConnectionSystem | undefined;
-   let systemMoveTx: TxMessageSystem | undefined;
-   let systemSendRandTx: SendRandTxSystem | undefined;
-
-   let camera: Camera | undefined;
-   let nodeCounterUI: NodeCounterUI | undefined;
-   const store: NodeStore = createNodeStore();
-   const factory: NodeFactory = createNodeFactory({ gameVars, store });
-   const inputCtrl = createInputCtrl();
-
-   const background = createBackground({ rows: 30, cols: 46 });
-
-   const sendResizeEvent = () => {
-      window.dispatchEvent(new CustomEvent("windowResize"));
-   };
-
-   const preventCtxMenu = (e: MouseEvent) => e.preventDefault();
-
-   const windowResize = () => {
-      resizer.resize(app, game);
-      nodeCounterUI?.resize();
-   };
-
-   window.addEventListener("resize", () => setTimeout(sendResizeEvent, 0));
-   window.addEventListener("windowResize", windowResize);
-   app.canvas.addEventListener("contextmenu", preventCtxMenu);
-   app.stage.interactive = true;
+   // const inputCtrl = createInputCtrl();
+   const camera = createViewport(app, game);
+   const background = createBackground({
+      rows: 20,
+      cols: 40,
+      // displayGridCords: true,
+   });
+   const nodeCountUI = createNodeCounterUI();
+   const store = createNodeStore();
+   const factory = createNodeFactory({ gameVars, store });
+   const systemNodeConnect = createNodeConnectionSystem({ gameVars, store });
+   const systemMoveTx = createTxMessageSystem(gameVars);
+   const systemSendTx = createSendTxSystem({ store });
 
    setMouseImages(app);
 
-   window.addEventListener("gameModal", () => {
-      inputCtrl.destroy();
-      bus.clear();
-      try {
-         window.removeEventListener("resize", sendResizeEvent);
-         window.removeEventListener("windowResize", windowResize);
-         app.canvas.removeEventListener("contextmenu", preventCtxMenu);
-      } catch (_) {}
+   createBusListeningEvents({
+      gameVars,
+      store,
+      factory,
+      systemNodeConnect,
+      systemMoveTx,
    });
 
    return {
       load: async () => {
          await assets.load();
-         game.addChild(background.graphic);
-         camera = createCamera({
-            gameVars,
-            bounds: background.size,
-            clampCamera: true,
-         });
-         systemDrag = createDragSystem({
-            gameVars,
-            clamp: true,
-            bounds: background.size,
-         });
-         systemNodeConnect = createNodeConnectionSystem({
-            gameVars: gameVars,
-            store: store,
-         });
-         systemMoveTx = createTxMessageSystem(gameVars);
-         systemSendRandTx = createSendTxSystem({ store });
-         nodeCounterUI = createNodeCounterUI({ gameVars });
-
-         createBusListeningEvents({
-            gameVars,
-            camera,
-            systemDrag,
-            factory,
-            systemMoveTx,
-            systemNodeConnect,
-            store,
-         });
+         game.addChild(background.ctr);
+         nodeCountUI.ctr.x = app.screen.width - nodeCountUI.ctr.width;
+         nodeCountUI.ctr.y = app.screen.height * 0.275;
+         app.stage.addChild(nodeCountUI.ctr);
+         setTimeout(() => {
+            camera.animate({
+               time: 0,
+               position: {
+                  x: camera.worldWidth / 2,
+                  y: camera.worldHeight / 2 - 10,
+               },
+               scale: 1.45,
+               ease: "linear",
+            });
+            bus.fire("node", { count: 19 });
+         }, 0);
       },
 
       update: (tick: PIXI.Ticker) => {
-         nodeCounterUI?.update(tick);
-         camera?.update(tick);
-         if (systemDrag?.isDragging()) {
-            camera?.lookAt(systemDrag?.getFocusPoint());
-         }
-         systemNodeConnect?.update(tick);
-         systemMoveTx?.update(tick);
-         systemSendRandTx?.update(tick);
+         nodeCountUI.update(tick);
+         systemSendTx.update(tick);
+         systemMoveTx.update(tick);
       },
    };
 };
 
 const createBusListeningEvents = (props: {
    gameVars: GameVars;
-   camera?: Camera;
-   systemDrag?: DragSystem;
    store: NodeStore;
    factory: NodeFactory;
    systemNodeConnect?: ConnectionSystem;
    systemMoveTx?: TxMessageSystem;
 }) => {
-   const {
-      gameVars,
-      camera,
-      systemDrag,
-      systemNodeConnect,
-      systemMoveTx,
-      store,
-      factory,
-   } = props;
-
-   const { game, app, resizer } = gameVars;
-
-   bus.on("zoom", (e) => {
-      if (!systemDrag || !camera) return;
-      const deltaZoom = 0.002;
-      if (e === "in") camera.zoom(deltaZoom);
-      if (e === "out") camera.zoom(-deltaZoom);
-      if (e === "reset") camera.resetZoom();
-
-      const prevDimen = game.getSize();
-      resizer.resize(app, game);
-      const nextDimen = game.getSize();
-
-      const zoomedIn = nextDimen.height > prevDimen.height;
-
-      const largerWidth = Math.max(prevDimen.width, nextDimen.width);
-      const smallerWidth = Math.min(prevDimen.width, nextDimen.width);
-      const diffWidth = smallerWidth / largerWidth;
-
-      const largerHeight = Math.max(prevDimen.height, nextDimen.height);
-      const smallerHeight = Math.min(prevDimen.height, nextDimen.height);
-      const diffHeight = smallerHeight / largerHeight;
-      const dragPos = systemDrag.getFocusPoint();
-      const nextPos = {
-         x: zoomedIn ? dragPos.x / diffWidth : dragPos.x * diffWidth,
-         y: zoomedIn ? dragPos.y / diffHeight : dragPos.y * diffHeight,
-      };
-      systemDrag.setFocusPoint(nextPos);
-
-      camera?.lookAt(systemDrag?.getFocusPoint());
-   });
+   const { systemNodeConnect, systemMoveTx, store, factory } = props;
 
    bus.on("node", (e) => {
       if (e.count > store.count()) {
@@ -233,7 +149,6 @@ const createBusListeningEvents = (props: {
 
          if (!sendingNode || !receivingNode) return;
          if (receivingNode.ip() === e.fromId) return;
-
          sendingNode.sendBtc({ units: e.units, node: receivingNode });
       } catch (_) {}
    });
@@ -251,21 +166,4 @@ const createBusListeningEvents = (props: {
          });
       });
    });
-
-   setTimeout(() => {
-      if (!systemDrag || !camera) return;
-      const gridCenter = { x: game.width * 0.5, y: game.height * 0.5 };
-      systemDrag.setFocusPoint(gridCenter);
-      camera.lookAt(systemDrag?.getFocusPoint());
-      bus.fire("node", { count: 19 });
-
-      camera?.setZoom(0.6);
-      systemDrag.setFocusPoint({
-         x: app.screen.width * 0.8,
-         y: app.screen.height * 0.92,
-      });
-
-      window.dispatchEvent(new CustomEvent("windowResize"));
-      camera?.lookAt(systemDrag?.getFocusPoint());
-   }, 50);
 };
