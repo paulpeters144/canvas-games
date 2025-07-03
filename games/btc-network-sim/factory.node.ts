@@ -54,8 +54,8 @@ const getSurroundingPos = (node: BtcNode) => {
       bottomRight: new PIXI.Rectangle(),
    };
 
-   const blockSize = 2;
-   const distanceFromNode = 175;
+   const blockSize = 1;
+   const distanceFromNode = 133;
 
    const nodeCenterX = node.anim.x + node.anim.width * 0.5;
    const nodeCenterY = node.anim.y + node.anim.height * 0.5;
@@ -145,8 +145,8 @@ const getNextOpenPos = (
 ): Position => {
    if (store.length === 0) {
       return {
-         x: gameSize.width * 0.5 - 25,
-         y: gameSize.height * 0.5 - 25,
+         x: gameSize.width * 0.5 - 10,
+         y: gameSize.height * 0.5 - 10,
       };
    }
 

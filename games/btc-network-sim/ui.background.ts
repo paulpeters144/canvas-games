@@ -38,8 +38,8 @@ export const createBackground = ({
    const dotRadius = 1;
    const dotColor = "#b6cdd5";
 
-   for (let row = 0; row <= rows; row++) {
-      for (let col = 0; col <= cols; col++) {
+   for (let row = 0; row <= rows - 1; row++) {
+      for (let col = 0; col <= cols - 1; col++) {
          const x = col * gridSize;
          const y = row * gridSize;
          const g = new PIXI.Graphics();

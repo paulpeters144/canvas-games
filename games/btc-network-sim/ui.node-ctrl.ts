@@ -1,5 +1,4 @@
 import * as PIXI from "pixi.js";
-import { ZLayer } from "./game.enums";
 import { bus } from "./main";
 import type { Position } from "./types";
 import { color } from "./ui.colors";
@@ -12,8 +11,6 @@ export interface NodeCounterUI {
 
 export const createNodeCounterUI = (): NodeCounterUI => {
    const ctr = new PIXI.Container();
-   ctr.scale.set(0.55);
-   ctr.zIndex = ZLayer.top;
 
    const bgGraphic = new PIXI.Graphics();
    const bgWidth = 61;
