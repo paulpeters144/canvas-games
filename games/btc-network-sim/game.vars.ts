@@ -10,6 +10,7 @@ import type { Position } from "./types";
 
 export interface GameVars {
    game: PIXI.Container;
+   overLay: PIXI.Container;
    assets: GameAssets;
    resizer: GameResizer;
    scaler: GameScaler;
@@ -19,7 +20,8 @@ export interface GameVars {
    };
 }
 export const createGameVars = (
-   game: PIXI.ContainerChild,
+   game: PIXI.Container,
+   overLay: PIXI.Container,
    assets: GameAssets,
 ): GameVars => {
    const gameScaler = createGameScale();
@@ -28,6 +30,7 @@ export const createGameVars = (
 
    return {
       game,
+      overLay,
       assets,
       resizer: createGameResizer(gameScaler),
       scaler: gameScaler,

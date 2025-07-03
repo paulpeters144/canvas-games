@@ -1,22 +1,26 @@
 import { eBus } from "games/util/event-bus";
 import * as PIXI from "pixi.js";
-import { createGameAssets } from "./assets";
-import { type GameVars, createGameVars } from "./game.vars";
+import { createNodeFactory } from "./factory.node";
+import { ZLayer } from "./game.enums";
+import { type GameVars } from "./game.vars";
 import { createCamera } from "./model.camera-2";
+import { createNodeStore } from "./store.nodes";
+import { createNodeConnectionSystem } from "./system.node-connection";
 import { createBackground } from "./ui.background";
 import { setMouseImages } from "./ui.mouse";
-import {} from "./ui.node-ctrl";
+import { createNodeCounterUI } from "./ui.node-ctrl";
 import type { EventMap } from "./util.events";
 import { createInputCtrl } from "./util.input-ctrl";
 
 export const bus = eBus<EventMap>();
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
-   const game: PIXI.Container = new PIXI.Container();
-   const assets = createGameAssets();
-   const gameVars = createGameVars(game, assets);
-   const sceneEngine = newSceneEngine(gameVars, app);
-   sceneEngine.next(() => gameScene(gameVars, app));
+   // const game: PIXI.Container = new PIXI.Container();
+   // const overlay: PIXI.Container = new PIXI.Container();
+   // const assets = createGameAssets();
+   // const gameVars = createGameVars(game, overlay, assets);
+   // const sceneEngine = newSceneEngine(gameVars, app);
+   // sceneEngine.next(() => gameScene(gameVars, app));
 }
 
 export interface IScene {
@@ -27,9 +31,10 @@ export interface IScene {
 export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
    let gameTicker: PIXI.Ticker | undefined;
    let currentScene: IScene | undefined;
-   const { game } = gameVars;
-
-   app.stage.addChild(game);
+   const { game, overLay } = gameVars;
+   game.zIndex = ZLayer.bottom;
+   overLay.zIndex = ZLayer.mid;
+   app.stage.addChild(overLay, game);
 
    app.stage.addEventListener("pointermove", (e) => {
       gameVars.mouse.setPos({
@@ -59,17 +64,25 @@ export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
 };
 
 export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => {
-   const { game, assets, resizer } = gameVars;
+   const { game, overLay, assets, resizer } = gameVars;
 
    const inputCtrl = createInputCtrl();
 
    const camera = createCamera({
       gameVars,
       clampCamera: true,
+      enableDrag: true,
       app,
    });
-
-   const background = createBackground({ rows: 50, cols: 50 });
+   const background = createBackground({
+      rows: 50,
+      cols: 50,
+      displayGridCords: true,
+   });
+   const nodeCountUI = createNodeCounterUI();
+   const store = createNodeStore();
+   const factory = createNodeFactory({ gameVars, store });
+   const systemNodeConnect = createNodeConnectionSystem({ gameVars, store });
 
    const sendResizeEvent = () => {
       window.dispatchEvent(new CustomEvent("windowResize"));
@@ -96,6 +109,28 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
       } catch (_) {}
    });
 
+   bus.on("zoom", (e) => {
+      const deltaZoom = 1.5;
+      if (e === "in") camera.zoomAdd({ amount: deltaZoom });
+      if (e === "out") camera.zoomAdd({ amount: -deltaZoom });
+   });
+   bus.on("node", (e) => {
+      if (e.count > store.count()) {
+         while (e.count > store.count()) {
+            const newNode = factory.create();
+            store.push(newNode);
+            systemNodeConnect?.setup();
+         }
+      }
+      if (e.count < store.count()) {
+         while (e.count < store.count()) {
+            const node = store.pop();
+            node?.destroy();
+         }
+         systemNodeConnect?.setup();
+      }
+   });
+
    const greenSquare = new PIXI.Graphics()
       .rect(0, 0, 10, 10)
       .fill({ color: "lightgreen" });
@@ -111,12 +146,13 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
       .fill({ color: "lightblue" });
 
    const focusSquare = blueSquare;
-
    return {
       load: async () => {
          await assets.load();
-         game.addChild(background.graphic);
-         background.texts.map((t) => game.addChild(t));
+         game.addChild(background.ctr);
+         camera.zoomAdd({ amount: 1 });
+         camera.zoomAdd({ amount: -1 });
+         overLay.addChild(nodeCountUI.ctr);
          game.addChild(focusSquare, yellowSquare, redSquare);
          setTimeout(() => {
             focusSquare.position.set(game.width * 0.5, game.height * 0.5);
@@ -124,19 +160,12 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
       },
 
       update: (tick: PIXI.Ticker) => {
-         if (inputCtrl.upArrow.data.pressed) focusSquare.y -= 3;
-         if (inputCtrl.downArrow.data.pressed) focusSquare.y += 3;
-         if (inputCtrl.leftArrow.data.pressed) focusSquare.x -= 3;
-         if (inputCtrl.rightArrow.data.pressed) focusSquare.x += 3;
-         if (inputCtrl.zoomIn.data.pressed) camera.zoomAdd(0.5);
-         if (inputCtrl.zoomOut.data.pressed) camera.zoomAdd(-0.5);
+         if (inputCtrl.zoomIn.data.pressed) camera.zoomAdd({ amount: 0.5 });
+         if (inputCtrl.zoomOut.data.pressed) camera.zoomAdd({ amount: -0.5 });
          camera.update(tick);
-         camera.lookAt({
-            x: focusSquare.x + focusSquare.width * 0.5,
-            y: focusSquare.y + focusSquare.height * 0.5,
-         });
-         redSquare.position.set(camera.zeroPos().x, camera.zeroPos().y);
+         nodeCountUI.update(tick);
          yellowSquare.position.set(camera.centerPos().x, camera.centerPos().y);
+         redSquare.position.set(camera.zeroPos().x, camera.zeroPos().y);
       },
    };
 };

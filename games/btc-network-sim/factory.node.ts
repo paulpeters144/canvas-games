@@ -15,18 +15,19 @@ interface nodeFactoryProps {
 
 export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
    const { gameVars, store } = props;
-   const { game, scaler } = gameVars;
+   const { game } = gameVars;
 
    const getGameSize = () => {
       return {
-         width: game.width / scaler.getGameScale(),
-         height: game.height / scaler.getGameScale(),
+         width: game.width,
+         height: game.height,
       };
    };
 
    const create = () => {
       const pos = getNextOpenPos(store.data(), getGameSize());
       const node = createBtcNode({ gameVars, pos });
+      // displayOpenNeighborSlots({ node, game });
       return node;
    };
 
@@ -85,7 +86,7 @@ const getSurroundingPos = (node: BtcNode) => {
 
 const displayOpenNeighborSlots = (props: {
    node: BtcNode;
-   game: PIXI.ContainerChild;
+   game: PIXI.Container;
 }) => {
    const { node, game } = props;
    const surroundingPos = getSurroundingPos(node);

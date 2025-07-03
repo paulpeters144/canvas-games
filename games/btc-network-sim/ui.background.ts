@@ -1,13 +1,13 @@
 import * as PIXI from "pixi.js";
-import { ZLayer } from "./game.enums";
 
-export const createBackground = ({ rows, cols }: { rows: number; cols: number }) => {
+export const createBackground = ({
+   rows,
+   cols,
+   displayGridCords,
+}: { rows: number; cols: number; displayGridCords?: boolean }) => {
+   const ctr = new PIXI.Container();
    const gridSize = 50;
    const fillColor = "#4E505F";
-
-   const graphic = new PIXI.Graphics();
-   graphic.zIndex = ZLayer.bottom;
-   const texts: PIXI.Text[] = [];
 
    const style = new PIXI.TextStyle({
       fill: "#FFFFFF",
@@ -19,13 +19,19 @@ export const createBackground = ({ rows, cols }: { rows: number; cols: number })
       for (let col = 0; col < cols; col++) {
          const x = col * gridSize;
          const y = row * gridSize;
+         const g = new PIXI.Graphics();
+         g.cullable = true;
+         g.rect(x, y, gridSize, gridSize).fill(fillColor);
+         ctr.addChild(g);
 
-         graphic.rect(x, y, gridSize, gridSize).fill(fillColor);
-         const text = new PIXI.Text({ style, text: `${row + 1},${col + 1}` });
-         text.resolution = 2;
-         text.anchor.set(0.5, 0.5);
-         text.position.set(x + gridSize * 0.5, y + gridSize * 0.5);
-         texts.push(text);
+         if (displayGridCords) {
+            const text = new PIXI.Text({ style, text: `${row + 1},${col + 1}` });
+            text.resolution = 2;
+            text.anchor.set(0.5, 0.5);
+            text.position.set(x + gridSize * 0.5, y + gridSize * 0.5);
+            text.cullable = true;
+            ctr.addChild(text);
+         }
       }
    }
 
@@ -36,14 +42,15 @@ export const createBackground = ({ rows, cols }: { rows: number; cols: number })
       for (let col = 0; col <= cols; col++) {
          const x = col * gridSize;
          const y = row * gridSize;
-
-         graphic.circle(x, y, dotRadius).fill({ color: dotColor, alpha: 0.25 });
+         const g = new PIXI.Graphics();
+         g.cullable = true;
+         g.circle(x, y, dotRadius).fill({ color: dotColor, alpha: 0.25 });
+         ctr.addChild(g);
       }
    }
 
    return {
       size: { width: cols * gridSize, height: rows * gridSize },
-      graphic: graphic,
-      texts,
+      ctr: ctr,
    };
 };
