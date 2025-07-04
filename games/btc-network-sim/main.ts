@@ -13,6 +13,7 @@ import {
 import { setupNodeFocus } from "./system.node-focus";
 import { createSendTxSystem } from "./system.send-txs";
 import { createBackground } from "./ui.background";
+import { createDataWidget } from "./ui.block-data";
 import { setMouseImages } from "./ui.mouse";
 import { createNodeCounterUI } from "./ui.node-ctrl";
 import { type Camera, createCamera } from "./util.camera";
@@ -63,12 +64,10 @@ export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
 export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => {
    const { game, assets } = gameVars;
 
-   // const inputCtrl = createInputCtrl();
    const camera = createCamera(app, game);
    const background = createBackground({
       rows: 20,
       cols: 41,
-      // displayGridCords: true,
    });
    const nodeCountUI = createNodeCounterUI(app);
    const store = createNodeStore();
@@ -76,6 +75,14 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
    const systemNodeConnect = createNodeConnectionSystem({ gameVars, store });
    const systemMoveTx = createTxMessageSystem(gameVars);
    const systemSendTx = createSendTxSystem({ store });
+   createDataWidget({
+      game: game,
+      camera,
+      store: store,
+      pixelSize: 2.01,
+      width: 70,
+      height: 95,
+   });
 
    setMouseImages(app);
 
@@ -92,9 +99,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
       load: async () => {
          await assets.load();
          game.addChild(background.ctr);
-         nodeCountUI.ctr.x = app.screen.width - nodeCountUI.ctr.width;
-         nodeCountUI.ctr.y = app.screen.height * 0.275;
-         app.stage.addChild(nodeCountUI.ctr);
+
          setTimeout(() => {
             camera.animate({
                time: 0,
@@ -107,6 +112,13 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
             });
             bus.fire("node", { count: 19 });
          }, 0);
+
+         setTimeout(() => {
+            const index = 0;
+            const node = store.data()[index].anim;
+            const e = {} as PIXI.FederatedPointerEvent;
+            // node.emit("pointerdown", e);
+         }, 100);
       },
 
       update: (tick: PIXI.Ticker) => {

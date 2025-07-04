@@ -141,6 +141,10 @@ export const createNodeCounterUI = (app: PIXI.Application): NodeCounterUI => {
       }
    };
 
+   ctr.x = app.screen.width - ctr.width;
+   ctr.y = app.screen.height * 0.275;
+   app.stage.addChild(ctr);
+
    return {
       ctr: ctr,
       update: update,

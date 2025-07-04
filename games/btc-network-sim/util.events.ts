@@ -6,5 +6,5 @@ export type EventMap = {
    msgAtDest: { startId: string; endId: string };
    newTx: { originId: string; tx: BlockTx };
    wheel: "in" | "out";
-   focusNode: { ip: string; isFocused: boolean };
+   focusNode: { isFocused: true; ip: string } | { isFocused: false };
 };

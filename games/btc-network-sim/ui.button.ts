@@ -61,12 +61,8 @@ export const createBtnGraphic = (props: {
       text: props.text.value,
    });
 
-   // Set the anchor point of the text to its center
-   text.anchor.set(0.5); // Sets both x and y anchor to 0.5 (center)
+   text.anchor.set(0.5);
 
-   // Position the text at the center of the pixelGraphic
-   // For PIXI.Graphics, x and y are typically its top-left corner
-   // So, to find the center of the graphic:
    text.x = ctr.x + ctr.width * 0.6;
    text.y = ctr.y + ctr.height * 0.6;
 

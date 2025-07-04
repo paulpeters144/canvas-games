@@ -1,5 +1,5 @@
 import { type IAnimateOptions, Viewport } from "pixi-viewport";
-import type * as PIXI from "pixi.js";
+import * as PIXI from "pixi.js";
 import type { Position } from "./types";
 
 const GAME_WIDTH = 1280;
@@ -75,10 +75,16 @@ export const createCamera = (
       worldWidth: () => viewport.worldWidth,
       worldHeight: () => viewport.worldHeight,
       animate: (options: IAnimateOptions) => viewport.animate(options),
-      dragOff: () => viewport.plugins.pause("drag"),
-      dragOn: () => viewport.plugins.resume("drag"),
+      enableDrag: (value: boolean) =>
+         value ? viewport.plugins.resume("drag") : viewport.plugins.pause("drag"),
+      enableZoom: (value: boolean) =>
+         value ? viewport.plugins.resume("wheel") : viewport.plugins.pause("wheel"),
       centerPos: () => ({ x: viewport.center.x, y: viewport.center.y }),
       zoomPercent: () => viewport.scale.x,
+      vpBounds: () => {
+         const vp = viewport.getVisibleBounds();
+         return new PIXI.Rectangle(vp.x, vp.y, vp.width, vp.height);
+      },
    };
 };
 
@@ -86,8 +92,9 @@ export interface Camera {
    worldWidth: () => number;
    worldHeight: () => number;
    animate: (options: IAnimateOptions) => Viewport;
-   dragOff: () => void;
-   dragOn: () => void;
+   enableDrag: (value: boolean) => void;
+   enableZoom: (value: boolean) => void;
    centerPos: () => Position;
    zoomPercent: () => number;
+   vpBounds: () => PIXI.Rectangle;
 }
