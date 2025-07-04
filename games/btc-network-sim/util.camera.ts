@@ -1,10 +1,14 @@
-import { Viewport } from "pixi-viewport";
+import { type IAnimateOptions, Viewport } from "pixi-viewport";
 import type * as PIXI from "pixi.js";
+import type { Position } from "./types";
 
 const GAME_WIDTH = 1280;
 const GAME_HEIGHT = 720;
 
-export const createViewport = (app: PIXI.Application, bgCtr: PIXI.Container) => {
+export const createCamera = (
+   app: PIXI.Application,
+   bgCtr: PIXI.Container,
+): Camera => {
    app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
 
    app.canvas.style.border = "2px solid white";
@@ -67,5 +71,23 @@ export const createViewport = (app: PIXI.Application, bgCtr: PIXI.Container) => 
       viewport.cursor = "default";
    });
 
-   return viewport;
+   return {
+      worldWidth: () => viewport.worldWidth,
+      worldHeight: () => viewport.worldHeight,
+      animate: (options: IAnimateOptions) => viewport.animate(options),
+      dragOff: () => viewport.plugins.pause("drag"),
+      dragOn: () => viewport.plugins.resume("drag"),
+      centerPos: () => ({ x: viewport.center.x, y: viewport.center.y }),
+      zoomPercent: () => viewport.scale.x,
+   };
 };
+
+export interface Camera {
+   worldWidth: () => number;
+   worldHeight: () => number;
+   animate: (options: IAnimateOptions) => Viewport;
+   dragOff: () => void;
+   dragOn: () => void;
+   centerPos: () => Position;
+   zoomPercent: () => number;
+}

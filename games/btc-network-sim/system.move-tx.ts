@@ -28,9 +28,19 @@ export const createTxMessageSystem = (gameVars: GameVars): TxMessageSystem => {
       activeTxGraphics.push(txGraphic);
    };
 
+   let aNodeIsFocused = false;
+   bus.on("focusNode", (e) => {
+      aNodeIsFocused = e.isFocused;
+   });
+
    const update = (ticker: PIXI.Ticker) => {
       for (let i = activeTxGraphics.length - 1; i >= 0; i--) {
          const txGraphic = activeTxGraphics[i];
+
+         if (aNodeIsFocused && txGraphic.graphic().alpha > 0.5) {
+            txGraphic.graphic().alpha = 0.5;
+         }
+
          const completedDestination = txGraphic.update(ticker);
          if (completedDestination) {
             txGraphic.destroy();
@@ -53,6 +63,7 @@ interface txGraphic {
    txMsg: () => BlockTx;
    startId: () => string;
    endId: () => string;
+   graphic: () => PIXI.Graphics;
 }
 
 interface txGraphicProps {
@@ -116,5 +127,6 @@ const createTxGraphic = (props: txGraphicProps): txGraphic => {
       txMsg: () => txMsg,
       startId: () => start.ip(),
       endId: () => end.ip(),
+      graphic: () => graphic,
    };
 };

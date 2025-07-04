@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { bus } from "./main";
-import type { Position } from "./types";
+import { createBtnGraphic } from "./ui.button";
 import { color } from "./ui.colors";
 import { BtnState } from "./util.input-ctrl";
 
@@ -19,33 +19,38 @@ export const createNodeCounterUI = (app: PIXI.Application): NodeCounterUI => {
 
    const padding = 5;
    const nodeCountText = createNodeCountText();
-   const maxBtn = createBtcGraphic({
+   const btnAlphaData = { base: 0.8, hover: 0.93, down: 1 };
+   const maxBtn = createBtnGraphic({
       pixelSize: 4.25,
       width: 14,
       height: 14,
       pos: { x: 0, y: 42 },
       text: { value: "MAX", size: 14 },
+      alpha: btnAlphaData,
    });
-   const plusBtn = createBtcGraphic({
+   const plusBtn = createBtnGraphic({
       pixelSize: 4.25,
       width: 14,
       height: 14,
       pos: { x: 0, y: maxBtn.ctr.y + maxBtn.ctr.height + padding },
       text: { value: "+", size: 20 },
+      alpha: btnAlphaData,
    });
-   const minusBtn = createBtcGraphic({
+   const minusBtn = createBtnGraphic({
       pixelSize: 4.25,
       width: 14,
       height: 14,
       pos: { x: 0, y: plusBtn.ctr.y + plusBtn.ctr.height + padding },
       text: { value: "-", size: 20 },
+      alpha: btnAlphaData,
    });
-   const minBtn = createBtcGraphic({
+   const minBtn = createBtnGraphic({
       pixelSize: 4.25,
       width: 14,
       height: 14,
       pos: { x: 0, y: minusBtn.ctr.y + minusBtn.ctr.height + padding },
       text: { value: "MIN", size: 14 },
+      alpha: btnAlphaData,
    });
 
    const btnControl = new BtnInputCtrl();
@@ -61,8 +66,7 @@ export const createNodeCounterUI = (app: PIXI.Application): NodeCounterUI => {
 
    ctr.addChild(
       bgGraphic,
-      nodeCountText.nodes,
-      nodeCountText.count,
+      nodeCountText.ctr,
       maxBtn.ctr,
       plusBtn.ctr,
       minusBtn.ctr,
@@ -78,23 +82,14 @@ export const createNodeCounterUI = (app: PIXI.Application): NodeCounterUI => {
    let continueTillMax = false;
    let continueTillMin = false;
    const adjustNodeCountText = () => {
-      const { count, nodes } = nodeCountText;
-      count.text = `${currentNodeCount}`;
-      count.x = nodes.width * 0.5 - count.width * 0.5;
+      nodeCountText.nodeChange(currentNodeCount);
       bus.fire("node", { count: currentNodeCount });
    };
    adjustNodeCountText();
 
-   const containerInPlace = () => {
-      if (ctr.x !== app.stage.width - ctr.width) return false;
-      if (ctr.y !== app.stage.height * 0.275) return false;
-      return true;
-   };
-
-   const adjustCtrPos = () => {
-      ctr.x = app.stage.width - ctr.width - 500;
-      ctr.y = app.stage.height * 0.275;
-   };
+   bus.on("focusNode", (e) => {
+      ctr.visible = !e.isFocused;
+   });
 
    const update = (_: PIXI.Ticker) => {
       if (continueTillMax) {
@@ -152,150 +147,53 @@ export const createNodeCounterUI = (app: PIXI.Application): NodeCounterUI => {
    };
 };
 
-const createBtcGraphic = (props: {
-   pixelSize: number;
-   width: number;
-   height: number;
-   pos: Position;
-   text: { value: string; size: number };
-}) => {
-   const color = {
-      white: "#FFFFFF",
-      outBorder: "#9D5322",
-      inBorder: "#E88744",
-      mainBg: "#D67130",
-   };
-   const { pixelSize: pSize, width, height, pos } = props;
+const createNodeCountText = () => {
    const ctr = new PIXI.Container();
 
-   const pixelGraphic = new PIXI.Graphics();
-   pixelGraphic
-      .rect(pSize * 2, 0, pSize * (width - 4), pSize)
-      .fill({ color: color.outBorder });
-   pixelGraphic
-      .rect(pSize * 2, pSize, pSize * (width - 4), pSize)
-      .fill({ color: color.inBorder });
+   const bg = new PIXI.Graphics();
+   const bgWidth = 52;
+   const bgHeight = 38;
 
-   // top left pixel
-   pixelGraphic.rect(pSize, pSize, pSize, pSize).fill({ color: color.outBorder });
+   bg.roundRect(0, 0, bgWidth, bgHeight, 4).fill({ color: "#D67130" });
+   bg.alpha = 0.75;
+   ctr.addChild(bg);
 
-   // top right pixel
-   pixelGraphic
-      .rect(pSize * (width - 2), pSize, pSize, pSize)
-      .fill({ color: color.outBorder });
+   const style = new PIXI.TextStyle({
+      fontFamily: "GraphPix",
+      fontSize: 10.5,
+      fill: color.white,
+   });
 
-   // left border
-   pixelGraphic
-      .rect(0, pSize * 2, pSize, pSize * (height - 4))
-      .fill({ color: color.outBorder });
-   pixelGraphic
-      .rect(pSize, pSize * 2, pSize, pSize * (height - 4))
-      .fill({ color: color.inBorder });
-
-   // bottom left pixel
-   pixelGraphic
-      .rect(pSize, pSize * (height - 2), pSize, pSize)
-      .fill({ color: color.outBorder });
-
-   // bottom border
-   pixelGraphic
-      .rect(pSize * 2, pSize * (height - 1), pSize * (width - 4), pSize)
-      .fill({ color: color.outBorder });
-   pixelGraphic
-      .rect(pSize * 2, pSize * (height - 2), pSize * (width - 4), pSize)
-      .fill({ color: color.inBorder });
-
-   // bottom left pixel
-   pixelGraphic
-      .rect(pSize * (width - 2), pSize * (height - 2), pSize, pSize)
-      .fill({ color: color.outBorder });
-
-   // right border
-   pixelGraphic
-      .rect(pSize * (width - 1), pSize * 2, pSize, pSize * (height - 4))
-      .fill({ color: color.outBorder });
-   pixelGraphic
-      .rect(pSize * (width - 2), pSize * 2, pSize, pSize * (height - 4))
-      .fill({ color: color.inBorder });
-
-   // main background
-   pixelGraphic
-      .rect(pSize * 2, pSize * 2, pSize * (width - 4), pSize * (height - 4))
-      .fill({ color: color.mainBg });
-
-   const text = new PIXI.Text({
-      style: new PIXI.TextStyle({
-         fontSize: props.text.size,
-         fontFamily: "GraphPix",
-         fill: color.white,
-      }),
+   const nodes = new PIXI.Text({
+      text: "NODES",
+      style,
       resolution: 2,
-      text: props.text.value,
    });
-   text.x = pixelGraphic.x + pixelGraphic.width * 0.5 - text.width * 0.5;
-   text.y = pixelGraphic.y + pixelGraphic.height * 0.5 - text.height * 0.5;
+   nodes.anchor.set(0.5, 0);
+   nodes.x = bgWidth / 2;
+   nodes.y = 4.5;
+   ctr.addChild(nodes);
 
-   ctr.addChild(pixelGraphic, text);
-
-   ctr.x = pos.x;
-   ctr.y = pos.y;
-
-   ctr.interactive = true;
-   ctr.alpha = 0.8;
-   ctr.on("pointerenter", () => {
-      ctr.alpha = 0.93;
+   const count = new PIXI.Text({
+      text: "1",
+      style,
+      resolution: 2,
    });
-   ctr.on("pointerleave", () => {
-      ctr.alpha = 0.8;
-   });
+   count.anchor.set(0.5, 0);
+   count.x = bgWidth / 2;
+   count.y = nodes.y + nodes.height + 4;
+   ctr.addChild(count);
 
-   let clickCb: (() => void) | undefined = undefined;
-   let releaseCb: (() => void) | undefined = undefined;
-
-   ctr.on("pointerdown", () => {
-      ctr.alpha = 1;
-      clickCb?.();
-   });
-
-   ctr.on("pointerup", () => {
-      ctr.alpha = 0.85;
-      releaseCb?.();
-   });
+   ctr.y = 4;
+   ctr.x = 2;
 
    return {
       ctr,
-      onClick: (cb: () => void) => {
-         clickCb = cb;
+      nodeChange: (n: number) => {
+         count.text = `${n}`;
+         count.x = bgWidth / 2;
+         nodes.x = bgWidth / 2 + 1;
       },
-      onRelease: (cb: () => void) => {
-         releaseCb = cb;
-      },
-   };
-};
-
-const createNodeCountText = () => {
-   const style = new PIXI.TextStyle({
-      fontFamily: "GraphPix",
-      fontSize: 14,
-      fill: color.white,
-   });
-   const nodes = new PIXI.Text({
-      style: style,
-      resolution: 2,
-      text: "NODES",
-      alpha: 0.85,
-   });
-   const count = new PIXI.Text({
-      style: style,
-      resolution: 2,
-      text: "1",
-      y: nodes.y + nodes.height + 6.5,
-      alpha: 0.85,
-   });
-   count.x = nodes.width * 0.5 - count.width * 0.5;
-   return {
-      nodes: nodes,
-      count: count,
    };
 };
 

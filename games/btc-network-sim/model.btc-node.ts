@@ -14,22 +14,6 @@ interface BtcNodeProps {
    pos?: Position;
 }
 
-export interface BtcNode {
-   ip: () => string;
-   createdAt: () => Date;
-   destroy: () => void;
-   toRect: () => PIXI.Rectangle;
-   connections: () => NodeConnections;
-   pos: () => Position;
-   anim: PIXI.AnimatedSprite;
-   sendBtc: (props: { units: number; node: BtcNode }) => void;
-   receiveTx: (tx: BlockTx) => boolean;
-   wallet: BtcWallet;
-   mempool: Mempool;
-}
-
-let WATCH_IP = "";
-
 export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    const { gameVars, pos } = props;
    const { game, assets } = gameVars;
@@ -67,13 +51,10 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    const filter = new OutlineFilter({ thickness: 2, color: "#FFFFFF" });
    anim.interactive = true;
    anim.on("pointerenter", () => {
-      anim.filters = [filter];
       anim.cursor = "pointer";
-      // console.log("anim pos", anim.position);
+      anim.filters = [filter];
    });
-   anim.on("pointerdown", () => {
-      // TODO: some event will need to go here
-   });
+
    anim.on("pointerleave", () => {
       anim.filters = [];
       anim.cursor = "default";
@@ -96,13 +77,10 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       mempool.add(tx);
       bus.fire("newTx", { originId: ip, tx: tx });
    };
-   if (!WATCH_IP) WATCH_IP = ip;
+
    const receiveTx = (tx: BlockTx) => {
       if (mempool.hasTx(tx)) return false;
       mempool.add(tx);
-      if (ip === WATCH_IP) {
-         // console.log(`ip: ${ip}`, tx);
-      }
       return true;
    };
 
@@ -132,3 +110,17 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       },
    };
 };
+
+export interface BtcNode {
+   ip: () => string;
+   createdAt: () => Date;
+   destroy: () => void;
+   toRect: () => PIXI.Rectangle;
+   connections: () => NodeConnections;
+   pos: () => Position;
+   anim: PIXI.AnimatedSprite;
+   sendBtc: (props: { units: number; node: BtcNode }) => void;
+   receiveTx: (tx: BlockTx) => boolean;
+   wallet: BtcWallet;
+   mempool: Mempool;
+}

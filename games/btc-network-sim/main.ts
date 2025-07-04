@@ -1,5 +1,4 @@
 import { eBus } from "games/util/event-bus";
-import type { Viewport } from "pixi-viewport";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { type NodeFactory, createNodeFactory } from "./factory.node";
@@ -11,11 +10,12 @@ import {
    type ConnectionSystem,
    createNodeConnectionSystem,
 } from "./system.node-connection";
+import { setupNodeFocus } from "./system.node-focus";
 import { createSendTxSystem } from "./system.send-txs";
 import { createBackground } from "./ui.background";
 import { setMouseImages } from "./ui.mouse";
 import { createNodeCounterUI } from "./ui.node-ctrl";
-import { createViewport } from "./util.camera";
+import { type Camera, createCamera } from "./util.camera";
 import type { EventMap } from "./util.events";
 
 export const bus = eBus<EventMap>();
@@ -64,7 +64,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
    const { game, assets } = gameVars;
 
    // const inputCtrl = createInputCtrl();
-   const camera = createViewport(app, game);
+   const camera = createCamera(app, game);
    const background = createBackground({
       rows: 20,
       cols: 41,
@@ -99,8 +99,8 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
             camera.animate({
                time: 0,
                position: {
-                  x: camera.worldWidth / 2,
-                  y: camera.worldHeight / 2 - 10,
+                  x: camera.worldWidth() / 2,
+                  y: camera.worldHeight() / 2 - 10,
                },
                scale: 1.15,
                ease: "linear",
@@ -123,25 +123,22 @@ const createBusListeningEvents = (props: {
    factory: NodeFactory;
    systemNodeConnect?: ConnectionSystem;
    systemMoveTx?: TxMessageSystem;
-   camera: Viewport;
+   camera: Camera;
 }) => {
-   const { systemNodeConnect, systemMoveTx, store, factory, camera } = props;
+   const { systemNodeConnect, gameVars, systemMoveTx, store, factory, camera } =
+      props;
+   const { game } = gameVars;
 
    bus.on("node", (e) => {
       if (e.count > store.count()) {
          while (e.count > store.count()) {
             const newNode = factory.create();
 
-            newNode.anim.on("pointerdown", () => {
-               camera.animate({
-                  time: 450,
-                  position: {
-                     x: newNode.anim.x + 85,
-                     y: newNode.anim.y + 35,
-                  },
-                  scale: 3.85,
-                  ease: "easeInOutSine",
-               });
+            setupNodeFocus({
+               game,
+               camera,
+               node: newNode,
+               store,
             });
 
             store.push(newNode);

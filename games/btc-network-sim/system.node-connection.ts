@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
+import { bus } from "./main";
 import type { BtcNode } from "./model.btc-node";
 import type { NodeStore } from "./store.nodes";
 import type { Position } from "./types";
@@ -73,6 +74,17 @@ export const createNodeConnectionSystem = (
       }
 
       for (const line of connectLines) game.addChild(line);
+
+      bus.on("focusNode", (e) => {
+         if (e.isFocused)
+            connectLines.map((c) => {
+               c.alpha = 0.5;
+            });
+         if (!e.isFocused)
+            connectLines.map((c) => {
+               c.alpha = 1;
+            });
+      });
    };
 
    const update = (tick: PIXI.Ticker) => {};
