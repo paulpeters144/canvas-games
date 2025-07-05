@@ -3,7 +3,6 @@ import { ZLayer } from "./game.enums";
 import { bus } from "./main";
 import type { BtcNode } from "./model.btc-node";
 import type { NodeStore } from "./store.nodes";
-import type { Position } from "./types";
 import { color } from "./ui.colors";
 import type { Camera } from "./util.camera";
 
@@ -61,6 +60,7 @@ export const createDataWidget = (props: {
    const offClickAreaBtm = createOffClickArea();
    const offClickAreaRt = createOffClickArea();
    const offClickAreaLt = createOffClickArea();
+   const tabButtons = createTabButtons();
 
    ctr.addChild(
       pixelGraphic,
@@ -68,10 +68,10 @@ export const createDataWidget = (props: {
       offClickAreaBtm,
       offClickAreaLt,
       offClickAreaRt,
+      tabButtons.ctr,
    );
    ctr.visible = false;
    ctr.zIndex = ZLayer.top;
-   ctr.alpha = 0.9;
 
    game.addChild(ctr);
 
@@ -118,6 +118,8 @@ export const createDataWidget = (props: {
       offClickAreaRt.y = offClickAreaTop.y + offClickAreaTop.height;
       offClickAreaRt.width = pixelGraphic.x - (nodeRect.x + nodeRect.w + rtBuffer);
       offClickAreaRt.height = offClickAreaBtm.y - offClickAreaRt.y;
+
+      tabButtons.updatePosBasedOn(pixelGraphic);
    };
 
    const setLeftOf = (node: BtcNode) => {
@@ -164,6 +166,8 @@ export const createDataWidget = (props: {
       offClickAreaRt.y = offClickAreaTop.y + offClickAreaTop.height;
       offClickAreaRt.width = vpBounds.right - (nodeRect.x + nodeRect.w + rtBuffer);
       offClickAreaRt.height = offClickAreaBtm.y - offClickAreaRt.y;
+
+      tabButtons.updatePosBasedOn(pixelGraphic);
    };
 
    bus.on("focusNode", (e) => {
@@ -182,91 +186,154 @@ export const createDataWidget = (props: {
    });
 };
 
+const createTabButtons = () => {
+   const padding = 1;
+   const createProps = (text: string) => {
+      const t = { value: text, size: 4.5 };
+      return { pixelSize: 1, width: 40, height: 11, text: t };
+   };
+
+   const blockchainTab = createTabBtn(createProps("Blockchain"));
+   blockchainTab.onClick(() => {
+      if (blockchainTab.isFocused()) return;
+      blockchainTab.setFocused(true);
+      mempoolTab.setFocused(false);
+      walletTab.setFocused(false);
+   });
+
+   const mempoolTab = createTabBtn(createProps("Mempool"));
+   mempoolTab.ctr.x = blockchainTab.ctr.x + blockchainTab.ctr.width;
+   mempoolTab.ctr.x += padding;
+   mempoolTab.onClick(() => {
+      if (mempoolTab.isFocused()) return;
+      mempoolTab.setFocused(true);
+      blockchainTab.setFocused(false);
+      walletTab.setFocused(false);
+   });
+
+   const walletTab = createTabBtn(createProps("Wallet"));
+   walletTab.ctr.x = mempoolTab.ctr.x + mempoolTab.ctr.width;
+   walletTab.ctr.x += padding;
+   walletTab.onClick(() => {
+      if (walletTab.isFocused()) return;
+      walletTab.setFocused(true);
+      mempoolTab.setFocused(false);
+      blockchainTab.setFocused(false);
+   });
+
+   blockchainTab.setFocused(true);
+
+   const ctr = new PIXI.Container();
+   ctr.addChild(blockchainTab.ctr, mempoolTab.ctr, walletTab.ctr);
+
+   return {
+      ctr,
+      updatePosBasedOn: (graphic: PIXI.Graphics) => {
+         ctr.y = graphic.y + 3;
+         ctr.x = graphic.x + (graphic.width * 0.5 - ctr.width * 0.5);
+      },
+   };
+};
+
 const createTabBtn = (props: {
    pixelSize: number;
    width: number;
    height: number;
-   pos: Position;
    text: { value: string; size: number };
-   alpha: {
-      base: number;
-      hover: number;
-      down: number;
-   };
 }) => {
-   //    const color = {
-   //       white: "#FFFFFF",
-   //       outBorder: "#9D5322",
-   //       inBorder: "#E88744",
-   //       mainBg: "#D67130",
-   //    };
-   //    const { alpha, pixelSize: pSize, width, height, pos } = props;
-   //    const ctr = new PIXI.Container();
-   //    const pixelGraphic = new PIXI.Graphics();
-   //    pixelGraphic
-   //       .rect(pSize * 2, pSize, pSize * (width - 4), pSize)
-   //       .fill({ color: color.inBorder });
-   //    // left border
-   //    pixelGraphic
-   //       .rect(pSize, pSize * 2, pSize, pSize * (height - 4))
-   //       .fill({ color: color.inBorder });
-   //    // bottom border
-   //    pixelGraphic
-   //       .rect(pSize * 2, pSize * (height - 2), pSize * (width - 4), pSize)
-   //       .fill({ color: color.inBorder });
-   //    // right border
-   //    pixelGraphic
-   //       .rect(pSize * (width - 2), pSize * 2, pSize, pSize * (height - 4))
-   //       .fill({ color: color.inBorder });
-   //    // main background
-   //    pixelGraphic
-   //       .rect(pSize * 2, pSize * 2, pSize * (width - 4), pSize * (height - 4))
-   //       .fill({ color: color.mainBg });
-   //    ctr.addChild(pixelGraphic);
-   //    const text = new PIXI.Text({
-   //       style: new PIXI.TextStyle({
-   //          fontSize: props.text.size,
-   //          fontFamily: "GraphPix",
-   //          fill: color.white,
-   //       }),
-   //       resolution: 2,
-   //       text: props.text.value,
-   //    });
-   //    // Set the anchor point of the text to its center
-   //    text.anchor.set(0.5); // Sets both x and y anchor to 0.5 (center)
-   //    // Position the text at the center of the pixelGraphic
-   //    // For PIXI.Graphics, x and y are typically its top-left corner
-   //    // So, to find the center of the graphic:
-   //    text.x = ctr.x + ctr.width * 0.6;
-   //    text.y = ctr.y + ctr.height * 0.6;
-   //    ctr.addChild(text);
-   //    ctr.x = pos.x;
-   //    ctr.y = pos.y;
-   //    ctr.interactive = true;
-   //    ctr.alpha = 0.8;
-   //    ctr.on("pointerenter", () => {
-   //       ctr.alpha = alpha.hover;
-   //    });
-   //    ctr.on("pointerleave", () => {
-   //       ctr.alpha = alpha.base;
-   //    });
-   //    let clickCb: (() => void) | undefined = undefined;
-   //    let releaseCb: (() => void) | undefined = undefined;
-   //    ctr.on("pointerdown", () => {
-   //       ctr.alpha = alpha.down;
-   //       clickCb?.();
-   //    });
-   //    ctr.on("pointerup", () => {
-   //       ctr.alpha = alpha.base;
-   //       releaseCb?.();
-   //    });
-   //    return {
-   //       ctr,
-   //       onClick: (cb: () => void) => {
-   //          clickCb = cb;
-   //       },
-   //       onRelease: (cb: () => void) => {
-   //          releaseCb = cb;
-   //       },
-   //    };
+   const color = {
+      white: "#FFFFFF",
+      border: "#E88744",
+      mainBg: "#D67130",
+   };
+   const { pixelSize: pSize, width, height } = props;
+   let isFocused = false;
+   const ctr = new PIXI.Container();
+
+   const topB = new PIXI.Graphics();
+   const createTopBWithColor = (c: string) => {
+      topB
+         .clear()
+         .rect(pSize * 2, pSize, pSize * (width - 4), pSize)
+         .fill({ color: c });
+   };
+
+   const leftB = new PIXI.Graphics();
+   const createLeftBWithColor = (c: string | number) => {
+      leftB
+         .clear()
+         .rect(pSize, pSize * 2, pSize, pSize * (height - 4))
+         .fill({ color: c });
+   };
+
+   const btmB = new PIXI.Graphics();
+   const createBtmBWithColor = (c: string | number) => {
+      btmB
+         .clear()
+         .rect(pSize * 2, pSize * (height - 2), pSize * (width - 4), pSize)
+         .fill({ color: c });
+   };
+
+   const rightB = new PIXI.Graphics();
+   const createRightBWithColor = (c: string | number) => {
+      rightB
+         .clear()
+         .rect(pSize * (width - 2), pSize * 2, pSize, pSize * (height - 4))
+         .fill({ color: c });
+   };
+
+   createTopBWithColor(color.border);
+   createRightBWithColor(color.border);
+   createBtmBWithColor(color.border);
+   createLeftBWithColor(color.border);
+
+   const mainBg = new PIXI.Graphics()
+      .rect(pSize * 2, pSize * 2, pSize * (width - 4), pSize * (height - 4))
+      .fill({ color: color.mainBg });
+
+   ctr.addChild(topB, leftB, btmB, rightB, mainBg);
+
+   const text = new PIXI.Text({
+      style: new PIXI.TextStyle({
+         fontSize: props.text.size,
+         fontFamily: "consolas",
+         fill: color.white,
+      }),
+      resolution: 7,
+      text: props.text.value,
+   });
+
+   text.anchor.set(0.5);
+   text.x = ctr.x + ctr.width * 0.54;
+   text.y = ctr.y + ctr.height * 0.54;
+   ctr.addChild(text);
+   ctr.interactive = true;
+
+   let clickCb: (() => void) | undefined = undefined;
+   ctr.on("pointerdown", () => {
+      clickCb?.();
+   });
+
+   return {
+      ctr,
+      onClick: (cb: () => void) => {
+         clickCb = cb;
+      },
+      setFocused: (value: boolean) => {
+         isFocused = value;
+         if (value) {
+            createTopBWithColor(color.white);
+            createRightBWithColor(color.white);
+            createBtmBWithColor(color.white);
+            createLeftBWithColor(color.white);
+         }
+         if (!value) {
+            createTopBWithColor(color.border);
+            createRightBWithColor(color.border);
+            createBtmBWithColor(color.border);
+            createLeftBWithColor(color.border);
+         }
+      },
+      isFocused: () => isFocused,
+   };
 };

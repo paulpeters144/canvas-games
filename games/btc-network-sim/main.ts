@@ -117,7 +117,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
             const index = 0;
             const node = store.data()[index].anim;
             const e = {} as PIXI.FederatedPointerEvent;
-            // node.emit("pointerdown", e);
+            node.emit("pointerdown", e);
          }, 100);
       },
 
