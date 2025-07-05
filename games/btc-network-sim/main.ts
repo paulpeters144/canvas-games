@@ -41,6 +41,13 @@ export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
    game.zIndex = ZLayer.bottom;
    app.stage.addChild(game);
 
+   // TODO: need to dispose these listeners
+   const wheelEventListener = (e: WheelEvent) => {
+      e.preventDefault();
+      e.deltaY > 0 ? bus.fire("wheel", "down") : bus.fire("wheel", "up");
+   };
+   window.addEventListener("wheel", wheelEventListener, { passive: false });
+
    return {
       next: async (nextScene: () => IScene) => {
          game.removeChildren();

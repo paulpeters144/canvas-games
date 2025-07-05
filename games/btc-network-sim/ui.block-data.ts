@@ -4,6 +4,12 @@ import { bus } from "./main";
 import type { BtcNode } from "./model.btc-node";
 import type { NodeStore } from "./store.nodes";
 import { color } from "./ui.colors";
+import {
+   BLOCK_SAMPLE,
+   BTC_WALLET_SAMPLE,
+   MEMPOOL_SAMPLE,
+   createScrollBox,
+} from "./ui.scrollbox";
 import type { Camera } from "./util.camera";
 
 export const createDataWidget = (props: {
@@ -61,6 +67,44 @@ export const createDataWidget = (props: {
    const offClickAreaRt = createOffClickArea();
    const offClickAreaLt = createOffClickArea();
    const tabButtons = createTabButtons();
+   let text = createScrollBox({
+      width: 0,
+      height: 0,
+      fontSize: 0,
+      title: "",
+      defaultText: "",
+   });
+   const newScrollBox = (title: string, body: string) => {
+      ctr.removeChild(text.ctr);
+      text = createScrollBox({
+         width: 120,
+         height: 160,
+         fontSize: 3.5,
+         title: title,
+         defaultText: body,
+      });
+      ctr.addChild(text.ctr);
+      text.updatePosBasedOn(pixelGraphic);
+   };
+   tabButtons.event.onBlockchainTab(() => {
+      newScrollBox("Blockchain", BLOCK_SAMPLE);
+   });
+   tabButtons.event.onMempoolTab(() => {
+      newScrollBox("Mempool", MEMPOOL_SAMPLE);
+   });
+   tabButtons.event.onWalletTab(() => {
+      newScrollBox("Wallet", BTC_WALLET_SAMPLE);
+   });
+
+   bus.on("wheel", (e) => {
+      if (!ctr.visible) return;
+      if (e === "up") {
+         text.scrollTo(-15);
+      }
+      if (e === "down") {
+         text.scrollTo(15);
+      }
+   });
 
    ctr.addChild(
       pixelGraphic,
@@ -70,6 +114,7 @@ export const createDataWidget = (props: {
       offClickAreaRt,
       tabButtons.ctr,
    );
+   newScrollBox("Blockchain", BLOCK_SAMPLE);
    ctr.visible = false;
    ctr.zIndex = ZLayer.top;
 
@@ -120,6 +165,7 @@ export const createDataWidget = (props: {
       offClickAreaRt.height = offClickAreaBtm.y - offClickAreaRt.y;
 
       tabButtons.updatePosBasedOn(pixelGraphic);
+      text.updatePosBasedOn(pixelGraphic);
    };
 
    const setLeftOf = (node: BtcNode) => {
@@ -168,6 +214,7 @@ export const createDataWidget = (props: {
       offClickAreaRt.height = offClickAreaBtm.y - offClickAreaRt.y;
 
       tabButtons.updatePosBasedOn(pixelGraphic);
+      text.updatePosBasedOn(pixelGraphic);
    };
 
    bus.on("focusNode", (e) => {
@@ -194,14 +241,17 @@ const createTabButtons = () => {
    };
 
    const blockchainTab = createTabBtn(createProps("Blockchain"));
+   let blockchainTabCb: (() => void) | undefined;
    blockchainTab.onClick(() => {
       if (blockchainTab.isFocused()) return;
       blockchainTab.setFocused(true);
       mempoolTab.setFocused(false);
       walletTab.setFocused(false);
+      blockchainTabCb?.();
    });
 
    const mempoolTab = createTabBtn(createProps("Mempool"));
+   let mempoolTabCb: (() => void) | undefined;
    mempoolTab.ctr.x = blockchainTab.ctr.x + blockchainTab.ctr.width;
    mempoolTab.ctr.x += padding;
    mempoolTab.onClick(() => {
@@ -209,16 +259,19 @@ const createTabButtons = () => {
       mempoolTab.setFocused(true);
       blockchainTab.setFocused(false);
       walletTab.setFocused(false);
+      mempoolTabCb?.();
    });
 
    const walletTab = createTabBtn(createProps("Wallet"));
    walletTab.ctr.x = mempoolTab.ctr.x + mempoolTab.ctr.width;
    walletTab.ctr.x += padding;
+   let walletTabCb: (() => void) | undefined;
    walletTab.onClick(() => {
       if (walletTab.isFocused()) return;
       walletTab.setFocused(true);
       mempoolTab.setFocused(false);
       blockchainTab.setFocused(false);
+      walletTabCb?.();
    });
 
    blockchainTab.setFocused(true);
@@ -229,8 +282,19 @@ const createTabButtons = () => {
    return {
       ctr,
       updatePosBasedOn: (graphic: PIXI.Graphics) => {
-         ctr.y = graphic.y + 3;
          ctr.x = graphic.x + (graphic.width * 0.5 - ctr.width * 0.5);
+         ctr.y = graphic.y + 3;
+      },
+      event: {
+         onBlockchainTab: (cb: () => void) => {
+            blockchainTabCb = cb;
+         },
+         onMempoolTab: (cb: () => void) => {
+            mempoolTabCb = cb;
+         },
+         onWalletTab: (cb: () => void) => {
+            walletTabCb = cb;
+         },
       },
    };
 };
@@ -299,7 +363,7 @@ const createTabBtn = (props: {
          fontFamily: "consolas",
          fill: color.white,
       }),
-      resolution: 7,
+      resolution: 8,
       text: props.text.value,
    });
 
