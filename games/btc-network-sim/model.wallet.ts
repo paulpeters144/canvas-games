@@ -10,7 +10,7 @@ export interface BtcWallet {
    addr: () => string;
    pubKey: () => string;
    utxos: () => UTXO[];
-   setNewUTXOs: (utxo: UTXO[]) => void;
+   setUTXOs: (utxo: UTXO[]) => void;
    balance: () => number;
    createTx: ({
       units,
@@ -60,7 +60,9 @@ export const createBtcWallet = (): BtcWallet => {
       return result;
    };
 
-   const createTx = ({ units, recAddr }: { units: number; recAddr: string }) => {
+   const createTx = (props: { units: number; recAddr: string }): BlockTx => {
+      const { units, recAddr } = props;
+
       const fee = units * 0.0012345;
       if (balance() < units + fee) {
          const message = `NSF ERROR\naddr: ${addr}\n balance: ${balance()}`;
@@ -114,10 +116,11 @@ export const createBtcWallet = (): BtcWallet => {
       const signature = sign(result);
       const tx = { ...result, sig: signature };
       const txHash = standard.hash(tx);
-      return { ...tx, hash: txHash };
+      const blockTransactions: BlockTx = { ...tx, hash: txHash };
+      return blockTransactions;
    };
 
-   const setNewUTXOs = (utxos: UTXO[]) => {
+   const setUTXOs = (utxos: UTXO[]) => {
       utxoArr.length = 0;
       utxos.map((u) => {
          u.owner = addr;
@@ -125,21 +128,11 @@ export const createBtcWallet = (): BtcWallet => {
       });
    };
 
-   // -=-=-=-=-=-=-=-=-=-=-=-TO=REMOVE=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-   setNewUTXOs(
-      Array.from({ length: 1000 }).map(() => ({
-         id: standard.idStr(),
-         value: standard.numAsStr(Math.random() * (1 - 0.001 + 1) + 0.001),
-         owner: "",
-      })) as UTXO[],
-   );
-   // -=-=-=-=-=-=-=-=-=-=-=-TO=REMOVE=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
    return {
       addr: () => addr,
       pubKey: () => pubKeyStr,
       utxos: () => utxoArr,
-      setNewUTXOs,
+      setUTXOs,
       balance,
       createTx,
    };

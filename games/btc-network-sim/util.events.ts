@@ -7,4 +7,5 @@ export type EventMap = {
    newTx: { originId: string; tx: BlockTx };
    wheel: "down" | "up";
    focusNode: { isFocused: true; ip: string } | { isFocused: false };
+   gameLoaded: boolean;
 };

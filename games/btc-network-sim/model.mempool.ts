@@ -5,7 +5,7 @@ export interface Mempool {
    getAllTxs: () => BlockTx[];
    add: (tx: BlockTx) => number;
    hasTx: (tx: BlockTx) => boolean;
-   displayJsonData: () => string;
+   toJsonStr: () => string;
 }
 
 export const createMempool = (): Mempool => {
@@ -17,7 +17,7 @@ export const createMempool = (): Mempool => {
       hasTx: (tx: BlockTx) => txs.some((t) => t.hash === tx.hash),
       getAllTxs: () => txs,
       add: (tx: BlockTx) => txs.push(tx),
-      displayJsonData: () => dummyJson(),
+      toJsonStr: () => dummyJson(),
    };
 };
 

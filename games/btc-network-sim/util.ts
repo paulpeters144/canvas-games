@@ -2,7 +2,7 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 import { sha256 } from "@noble/hashes/sha2";
 import { bytesToHex } from "@noble/hashes/utils";
 import { hexToBytes } from "@noble/hashes/utils";
-import type { BlockTx, PreSignedTx } from "./types";
+import type { Block, BlockTx } from "./types";
 
 export const standard = {
    idStr: () => crypto.randomUUID().replaceAll("-", "").slice(0, 25),
@@ -17,6 +17,31 @@ export const standard = {
       const hashBytes = sha256(dataBytes);
       const result = bytesToHex(hashBytes);
       return result;
+   },
+   getMerkleRoot: (hashes: string[]): string => {
+      if (hashes.length === 0) return standard.hash("notxs");
+      if (hashes.length === 1) return standard.hash(hashes[0]);
+      const nextHashesArr: string[] = [];
+      for (let i = 0; i < hashes.length; i += 2) {
+         let concatHash = "";
+         if (i === hashes.length - 1) {
+            concatHash = hashes[i];
+         } else {
+            concatHash = `${hashes[i]}${hashes[i + 1]}`;
+         }
+         nextHashesArr.push(standard.hash(concatHash));
+      }
+      return standard.getMerkleRoot(nextHashesArr);
+   },
+   hashBlock: (b: Block) => {
+      const prevHash = b.header.previousBlockHash;
+      const merkRoot = b.header.merkleRoot;
+      const time = b.header.timestamp;
+      const nonce = b.header.nonce;
+      const hash = b.header.previousBlockHash
+         ? standard.hash(`${prevHash}${merkRoot}${time}${nonce}`)
+         : standard.hash(`${merkRoot}${time}${nonce}`);
+      return hash;
    },
    round: (num: number) => Math.round(num * 1000000000) / 1000000000,
    randomIp: () => {
@@ -45,30 +70,40 @@ export const standard = {
 };
 
 export const validate = {
-   signature: (tx: BlockTx) => {
-      const sigObj = secp256k1.Signature.fromDER(tx.sig);
-      const publicKey = hexToBytes(tx.pubKey);
-      const nonSigTx: PreSignedTx = { ...tx };
+   txSig: (tx: BlockTx) => {
+      const copy = structuredClone(tx);
+      const sigObj = secp256k1.Signature.fromDER(copy.sig);
       // @ts-ignore
       // biome-ignore lint/performance/noDelete: <explanation>
-      delete nonSigTx.sig;
+      delete copy.sig;
       // @ts-ignore
       // biome-ignore lint/performance/noDelete: <explanation>
-      delete nonSigTx.hash;
-      const str = JSON.stringify(nonSigTx);
+      delete copy.hash;
+      const publicKey = hexToBytes(copy.pubKey);
+      const str = JSON.stringify(copy);
       const messageHash = sha256(new TextEncoder().encode(str));
       const isValid = secp256k1.verify(sigObj, messageHash, publicKey);
       return isValid;
    },
-   hash: (tx: BlockTx) => {
-      const txHash = tx.hash;
-      const test: unknown = tx;
+   txHash: (tx: BlockTx) => {
+      const copy = structuredClone(tx);
+      const txHash = copy.hash;
+      const test: unknown = copy;
       // @ts-ignore
       // biome-ignore lint/performance/noDelete: <explanation>
       delete test.hash;
-      const validatedHash = standard.hash(tx);
+      const validatedHash = standard.hash(copy);
       const isValid = txHash === validatedHash;
       return isValid;
+   },
+   headerOf: (block: Block) => {
+      const txHashes = block.transactions.map((t) => t.hash);
+      const validatedMerkleRoot = standard.getMerkleRoot(txHashes);
+      if (validatedMerkleRoot !== block.header.merkleRoot) return false;
+
+      const validatedBlockHash = standard.hashBlock(block);
+      if (validatedBlockHash !== block.hash) return false;
+      return true;
    },
 };
 

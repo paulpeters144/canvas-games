@@ -14,10 +14,16 @@ import { setupNodeFocus } from "./system.node-focus";
 import { createSendTxSystem } from "./system.send-txs";
 import { createBackground } from "./ui.background";
 import { createDataWidget } from "./ui.block-data";
+import { createLoadingOverlay } from "./ui.loading-overlay";
 import { setMouseImages } from "./ui.mouse";
 import { createNodeCounterUI } from "./ui.node-ctrl";
 import { type Camera, createCamera } from "./util.camera";
 import type { EventMap } from "./util.events";
+
+// TODO: create a loading screen where we mine 3 blocks
+
+// TODO: initialize all node, but just don't make some of them visible
+//       with the left blade ctrls
 
 export const bus = eBus<EventMap>();
 
@@ -77,6 +83,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
       cols: 41,
    });
    const nodeCountUI = createNodeCounterUI(app);
+   createLoadingOverlay(app);
    const store = createNodeStore();
    const factory = createNodeFactory({ gameVars, store });
    const systemNodeConnect = createNodeConnectionSystem({ gameVars, store });
@@ -106,8 +113,19 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
       load: async () => {
          await assets.load();
          game.addChild(background.ctr);
+         game.visible = false;
+         nodeCountUI.ctr.visible = false;
+         bus.fire("node", { count: 19 });
+         setTimeout(() => {
+            const index = 0;
+            const node = store.data()[index].anim;
+            const e = {} as PIXI.FederatedPointerEvent;
+            // node.emit("pointerdown", e);
+         }, 1750);
 
          setTimeout(() => {
+            game.visible = true;
+            nodeCountUI.ctr.visible = true;
             camera.animate({
                time: 0,
                position: {
@@ -117,15 +135,8 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
                scale: 1.15,
                ease: "linear",
             });
-            bus.fire("node", { count: 19 });
-         }, 0);
-
-         setTimeout(() => {
-            const index = 0;
-            const node = store.data()[index].anim;
-            const e = {} as PIXI.FederatedPointerEvent;
-            node.emit("pointerdown", e);
-         }, 100);
+            bus.fire("gameLoaded", true);
+         }, 1750);
       },
 
       update: (tick: PIXI.Ticker) => {
