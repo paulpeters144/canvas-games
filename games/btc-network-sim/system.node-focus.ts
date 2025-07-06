@@ -12,10 +12,11 @@ export let LAST_ZOOM_PERCENT = 1;
 export const setupNodeFocus = (props: {
    game: PIXI.Container;
    camera: Camera;
-   node: BtcNode;
+   node?: BtcNode;
    store: NodeStore;
 }) => {
    const { game, camera, node, store } = props;
+   if (!node) return;
    NODE_FOCUSED = "";
    LAST_POS = { x: 0, y: 0 };
    LAST_ZOOM_PERCENT = 1;
@@ -29,7 +30,7 @@ export const setupNodeFocus = (props: {
       LAST_POS = camera.centerPos();
       LAST_ZOOM_PERCENT = camera.zoomPercent();
 
-      store.data().map((n) => {
+      store.activeData().map((n) => {
          n.anim.interactive = false;
          if (n.ip() !== NODE_FOCUSED) n.anim.alpha = 0.5;
       });
@@ -63,7 +64,7 @@ export const setupNodeFocus = (props: {
       camera.enableDrag(true);
       camera.enableZoom(true);
 
-      store.data().map((n) => {
+      store.activeData().map((n) => {
          n.anim.interactive = true;
          n.anim.alpha = 1;
          n.anim.filters = [];

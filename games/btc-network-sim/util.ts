@@ -69,32 +69,43 @@ export const standard = {
    },
 };
 
+const textEncoder = new TextEncoder();
 export const validate = {
    txSig: (tx: BlockTx) => {
-      const copy = structuredClone(tx);
-      const sigObj = secp256k1.Signature.fromDER(copy.sig);
-      // @ts-ignore
-      // biome-ignore lint/performance/noDelete: <explanation>
-      delete copy.sig;
-      // @ts-ignore
-      // biome-ignore lint/performance/noDelete: <explanation>
-      delete copy.hash;
-      const publicKey = hexToBytes(copy.pubKey);
-      const str = JSON.stringify(copy);
-      const messageHash = sha256(new TextEncoder().encode(str));
-      const isValid = secp256k1.verify(sigObj, messageHash, publicKey);
-      return isValid;
+      // const copy = structuredClone(tx);
+      // const sigObj = secp256k1.Signature.fromDER(copy.sig);
+      // // @ts-ignore
+      // // biome-ignore lint/performance/noDelete: <explanation>
+      // delete copy.sig;
+      // // @ts-ignore
+      // // biome-ignore lint/performance/noDelete: <explanation>
+      // delete copy.hash;
+      // const publicKey = hexToBytes(copy.pubKey);
+      // const str = JSON.stringify(copy);
+      // const messageHash = sha256(new TextEncoder().encode(str));
+      // const isValid = secp256k1.verify(sigObj, messageHash, publicKey);
+      // return isValid;
+      const { sig, hash, ...txData } = tx; // Avoid clone + delete
+      const sigObj = secp256k1.Signature.fromDER(sig);
+      const publicKey = hexToBytes(tx.pubKey);
+      const str = JSON.stringify(txData);
+      const messageHash = sha256(textEncoder.encode(str));
+      return secp256k1.verify(sigObj, messageHash, publicKey);
    },
    txHash: (tx: BlockTx) => {
-      const copy = structuredClone(tx);
-      const txHash = copy.hash;
-      const test: unknown = copy;
-      // @ts-ignore
-      // biome-ignore lint/performance/noDelete: <explanation>
-      delete test.hash;
-      const validatedHash = standard.hash(copy);
-      const isValid = txHash === validatedHash;
-      return isValid;
+      // const copy = structuredClone(tx);
+      // const txHash = copy.hash;
+      // const test: unknown = copy;
+      // // @ts-ignore
+      // // biome-ignore lint/performance/noDelete: <explanation>
+      // delete test.hash;
+      // const validatedHash = standard.hash(copy);
+      // const isValid = txHash === validatedHash;
+      // return isValid;
+
+      const { hash, ...txData } = tx; // Avoid clone + delete
+      const validatedHash = standard.hash(txData);
+      return tx.hash === validatedHash;
    },
    headerOf: (block: Block) => {
       const txHashes = block.transactions.map((t) => t.hash);
@@ -116,3 +127,5 @@ export const randNum = (props: {
    const baseRand = Math.random() * (max - min + 1) + min;
    return decimal ? baseRand : Math.floor(baseRand);
 };
+
+export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));

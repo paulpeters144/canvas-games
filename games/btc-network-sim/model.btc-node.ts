@@ -2,7 +2,8 @@ import { OutlineFilter } from "pixi-filters";
 import * as PIXI from "pixi.js";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
-import { bus } from "./main";
+import { type Blockchain, createBlockchain } from "./model.blockchain";
+import { type BtcMiner, createMiner } from "./model.btc-miner";
 import { type NodeConnections, createConnections } from "./model.connection";
 import { type Mempool, createMempool } from "./model.mempool";
 import { type BtcWallet, createBtcWallet } from "./model.wallet";
@@ -23,6 +24,8 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    const wallet: BtcWallet = createBtcWallet();
    const mempool: Mempool = createMempool();
    const connections: NodeConnections = createConnections(ip);
+   const blockchain: Blockchain = createBlockchain();
+   const miner: BtcMiner = createMiner(wallet);
 
    const width = 37;
    const height = 43;
@@ -70,12 +73,12 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       return new PIXI.Rectangle(anim.x, anim.y, anim.width, anim.height);
    };
 
-   const sendBtc = (props: { units: number; node: BtcNode }) => {
+   const createTx = (props: { units: number; node: BtcNode }): BlockTx => {
       const { units, node } = props;
       const recAddr = node.wallet.addr();
       const tx = wallet.createTx({ units, recAddr });
       mempool.add(tx);
-      bus.fire("newTx", { originId: ip, tx: tx });
+      return tx;
    };
 
    const receiveTx = (tx: BlockTx) => {
@@ -98,10 +101,12 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       destroy,
       toRect,
       connections: () => connections,
-      sendBtc,
+      createTx,
       receiveTx,
       wallet,
       mempool,
+      blockchain,
+      miner,
       pos: () => {
          return {
             x: anim.x + anim.width * 0.5,
@@ -119,8 +124,10 @@ export interface BtcNode {
    connections: () => NodeConnections;
    pos: () => Position;
    anim: PIXI.AnimatedSprite;
-   sendBtc: (props: { units: number; node: BtcNode }) => void;
+   createTx: (props: { units: number; node: BtcNode }) => BlockTx;
    receiveTx: (tx: BlockTx) => boolean;
+   miner: BtcMiner;
+   blockchain: Blockchain;
    wallet: BtcWallet;
    mempool: Mempool;
 }

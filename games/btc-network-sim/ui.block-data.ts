@@ -223,7 +223,7 @@ export const createDataWidget = (props: {
          return;
       }
 
-      const node = store.data().find((n) => n.ip() === e.ip);
+      const node = store.activeData().find((n) => n.ip() === e.ip);
       if (!node) return;
 
       const isOnFarLeftScreen = game.width - node.anim.x > 250;

@@ -2,16 +2,18 @@ import type { BtcWallet } from "./model.wallet";
 import type { Block } from "./types";
 import { standard } from "./util";
 
-export const createMiner = (wallet: BtcWallet) => {
+export const createMiner = (wallet: BtcWallet): BtcMiner => {
    let nextBlockToMine: Block | undefined;
    let merkRoot = "";
+   let nonce = 0;
    const setNextBlockToMine = (b: Block) => {
       nextBlockToMine = b;
       const txHashes = b.transactions.map((t) => t.hash);
       merkRoot = standard.getMerkleRoot(txHashes);
+      nonce = 0;
    };
 
-   const mineNextBlock = (b: Block, nonce: number): Block | undefined => {
+   const mineNextBlock = (b: Block): Block | undefined => {
       if (!nextBlockToMine) {
          const err = "cannot mine without a block set";
          throw new Error(err);
@@ -20,7 +22,7 @@ export const createMiner = (wallet: BtcWallet) => {
       const prevHash = b.header.previousBlockHash;
       if (!prevHash) throw new Error("must has prev hash to mine next block");
       const time = new Date().getTime();
-
+      nonce++;
       const hash = standard.hash(`${prevHash}${merkRoot}${time}${nonce}`);
 
       const difficulty = "0".repeat(b.difficulty);
@@ -29,7 +31,7 @@ export const createMiner = (wallet: BtcWallet) => {
          b.minerRewardAddress = wallet.addr();
          b.hash = hash;
          b.header.previousBlockHash = prevHash;
-         b.header.merkleRoot = standard.getMerkleRoot([]);
+         b.header.merkleRoot = merkRoot;
          b.header.timestamp = time;
          b.header.nonce = nonce;
          return b;
@@ -38,7 +40,7 @@ export const createMiner = (wallet: BtcWallet) => {
       return undefined;
    };
 
-   const minGenesisBlock = (nonce: number): Block | undefined => {
+   const minGenesisBlock = (): Block | undefined => {
       if (!nextBlockToMine) {
          const err = "cannot mine without a block set";
          throw new Error(err);
@@ -49,7 +51,7 @@ export const createMiner = (wallet: BtcWallet) => {
       const prevHash = b.header.previousBlockHash;
       const merkRoot = standard.getMerkleRoot([]);
       const time = new Date().getTime();
-
+      nonce++;
       const hash = standard.hash(`${merkRoot}${time}${nonce}`);
 
       const difficulty = "0".repeat(b.difficulty);
@@ -73,3 +75,9 @@ export const createMiner = (wallet: BtcWallet) => {
       minGenesisBlock,
    };
 };
+
+export interface BtcMiner {
+   setNextBlockToMine: (b: Block) => void;
+   mineNextBlock: (b: Block) => Block | undefined;
+   minGenesisBlock: () => Block | undefined;
+}

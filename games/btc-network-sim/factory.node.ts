@@ -1,196 +1,198 @@
-import * as PIXI from "pixi.js";
-import type { GameVars } from "./game.vars";
-import { type BtcNode, createBtcNode } from "./model.btc-node";
-import type { NodeStore } from "./store.nodes";
-import type { Position } from "./types";
+// import * as PIXI from "pixi.js";
+// import type { GameVars } from "./game.vars";
+// import { type BtcNode, createBtcNode } from "./model.btc-node";
+// import type { NodeStore } from "./store.nodes";
+// import type { Position } from "./types";
 
-export interface NodeFactory {
-   create: () => BtcNode;
-}
+// export const MAX_NODE_COUNT = 127;
 
-interface nodeFactoryProps {
-   gameVars: GameVars;
-   store: NodeStore;
-}
+// export interface NodeFactory {
+//    create: () => BtcNode;
+// }
 
-export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
-   const { gameVars, store } = props;
-   const { game } = gameVars;
+// interface nodeFactoryProps {
+//    gameVars: GameVars;
+//    store: NodeStore;
+// }
 
-   const getGameSize = () => {
-      return {
-         width: game.width,
-         height: game.height,
-      };
-   };
+// export const createNodeFactory = (props: nodeFactoryProps): NodeFactory => {
+//    const { gameVars, store } = props;
+//    const { game } = gameVars;
 
-   const create = () => {
-      const pos = getNextOpenPos(store.data(), getGameSize());
-      const node = createBtcNode({ gameVars, pos });
-      // displayOpenNeighborSlots({ node, game });
-      return node;
-   };
+//    const getGameSize = () => {
+//       return {
+//          width: game.width,
+//          height: game.height,
+//       };
+//    };
 
-   return {
-      create,
-   };
-};
+//    const create = () => {
+//       const pos = getNextOpenPos(store.activeData(), getGameSize());
+//       const node = createBtcNode({ gameVars, pos });
+//       // displayOpenNeighborSlots({ node, game });
+//       return node;
+//    };
 
-type posKey =
-   | "top"
-   | "topLeft"
-   | "topRight"
-   | "bottom"
-   | "bottomLeft"
-   | "bottomRight";
+//    return {
+//       create,
+//    };
+// };
 
-const getSurroundingPos = (node: BtcNode) => {
-   const result = {
-      top: new PIXI.Rectangle(),
-      topLeft: new PIXI.Rectangle(),
-      topRight: new PIXI.Rectangle(),
-      bottom: new PIXI.Rectangle(),
-      bottomLeft: new PIXI.Rectangle(),
-      bottomRight: new PIXI.Rectangle(),
-   };
+// type posKey =
+//    | "top"
+//    | "topLeft"
+//    | "topRight"
+//    | "bottom"
+//    | "bottomLeft"
+//    | "bottomRight";
 
-   const blockSize = 1;
-   const distanceFromNode = 135;
+// const getSurroundingPos = (node: BtcNode) => {
+//    const result = {
+//       top: new PIXI.Rectangle(),
+//       topLeft: new PIXI.Rectangle(),
+//       topRight: new PIXI.Rectangle(),
+//       bottom: new PIXI.Rectangle(),
+//       bottomLeft: new PIXI.Rectangle(),
+//       bottomRight: new PIXI.Rectangle(),
+//    };
 
-   const nodeCenterX = node.anim.x + node.anim.width * 0.5;
-   const nodeCenterY = node.anim.y + node.anim.height * 0.5;
+//    const blockSize = 1;
+//    const distanceFromNode = 135;
 
-   const positionsData = [
-      { key: "top", angle: Math.PI * 1.5 },
-      { key: "topRight", angle: Math.PI * 1.85 },
-      { key: "bottomRight", angle: Math.PI * 0.15 },
-      { key: "bottom", angle: Math.PI * 0.5 },
-      { key: "bottomLeft", angle: Math.PI * 0.85 },
-      { key: "topLeft", angle: Math.PI * 1.15 },
-   ];
-   positionsData.map((p) => {
-      const angle = p.angle;
-      const blockCenterX = nodeCenterX + Math.cos(angle) * distanceFromNode;
-      const blockCenterY = nodeCenterY + Math.sin(angle) * distanceFromNode;
+//    const nodeCenterX = node.anim.x + node.anim.width * 0.5;
+//    const nodeCenterY = node.anim.y + node.anim.height * 0.5;
 
-      result[p.key as posKey] = new PIXI.Rectangle(
-         blockCenterX - blockSize * 0.5,
-         blockCenterY - blockSize * 0.5,
-         blockSize,
-         blockSize,
-      );
-   });
+//    const positionsData = [
+//       { key: "top", angle: Math.PI * 1.5 },
+//       { key: "topRight", angle: Math.PI * 1.85 },
+//       { key: "bottomRight", angle: Math.PI * 0.15 },
+//       { key: "bottom", angle: Math.PI * 0.5 },
+//       { key: "bottomLeft", angle: Math.PI * 0.85 },
+//       { key: "topLeft", angle: Math.PI * 1.15 },
+//    ];
+//    positionsData.map((p) => {
+//       const angle = p.angle;
+//       const blockCenterX = nodeCenterX + Math.cos(angle) * distanceFromNode;
+//       const blockCenterY = nodeCenterY + Math.sin(angle) * distanceFromNode;
 
-   return result;
-};
+//       result[p.key as posKey] = new PIXI.Rectangle(
+//          blockCenterX - blockSize * 0.5,
+//          blockCenterY - blockSize * 0.5,
+//          blockSize,
+//          blockSize,
+//       );
+//    });
 
-const displayOpenNeighborSlots = (props: {
-   node: BtcNode;
-   game: PIXI.Container;
-}) => {
-   const { node, game } = props;
-   const surroundingPos = getSurroundingPos(node);
-   for (const key of Object.keys(surroundingPos) as posKey[]) {
-      const rect = surroundingPos[key];
-      const block = new PIXI.Graphics();
+//    return result;
+// };
 
-      block
-         .rect(rect.x, rect.y, rect.width * 3, rect.height * 3)
-         .fill({ color: 0x00ff00, alpha: 0.7 });
+// const displayOpenNeighborSlots = (props: {
+//    node: BtcNode;
+//    game: PIXI.Container;
+// }) => {
+//    const { node, game } = props;
+//    const surroundingPos = getSurroundingPos(node);
+//    for (const key of Object.keys(surroundingPos) as posKey[]) {
+//       const rect = surroundingPos[key];
+//       const block = new PIXI.Graphics();
 
-      game.addChild(block);
-   }
-};
+//       block
+//          .rect(rect.x, rect.y, rect.width * 3, rect.height * 3)
+//          .fill({ color: 0x00ff00, alpha: 0.7 });
 
-interface rectsCollideProps {
-   rectA: PIXI.Rectangle;
-   rectB: PIXI.Rectangle;
-   buffer?: number;
-}
-const rectsCollide = (props: rectsCollideProps): boolean => {
-   const { rectA, rectB, buffer = 0 } = props;
+//       game.addChild(block);
+//    }
+// };
 
-   const bufferedRectA = new PIXI.Rectangle(
-      rectA.x - buffer,
-      rectA.y - buffer,
-      rectA.width + buffer * 2,
-      rectA.height + buffer * 2,
-   );
+// interface rectsCollideProps {
+//    rectA: PIXI.Rectangle;
+//    rectB: PIXI.Rectangle;
+//    buffer?: number;
+// }
+// const rectsCollide = (props: rectsCollideProps): boolean => {
+//    const { rectA, rectB, buffer = 0 } = props;
 
-   const bufferedRectB = new PIXI.Rectangle(
-      rectB.x - buffer,
-      rectB.y - buffer,
-      rectB.width + buffer * 2,
-      rectB.height + buffer * 2,
-   );
+//    const bufferedRectA = new PIXI.Rectangle(
+//       rectA.x - buffer,
+//       rectA.y - buffer,
+//       rectA.width + buffer * 2,
+//       rectA.height + buffer * 2,
+//    );
 
-   const aRightOfBLeft = bufferedRectA.x < bufferedRectB.x + bufferedRectB.width;
-   if (!aRightOfBLeft) return false;
+//    const bufferedRectB = new PIXI.Rectangle(
+//       rectB.x - buffer,
+//       rectB.y - buffer,
+//       rectB.width + buffer * 2,
+//       rectB.height + buffer * 2,
+//    );
 
-   const aLeftOfBRight = bufferedRectA.x + bufferedRectA.width > bufferedRectB.x;
-   if (!aLeftOfBRight) return false;
+//    const aRightOfBLeft = bufferedRectA.x < bufferedRectB.x + bufferedRectB.width;
+//    if (!aRightOfBLeft) return false;
 
-   const aBelowBTop = bufferedRectA.y < bufferedRectB.y + bufferedRectB.height;
-   if (!aBelowBTop) return false;
+//    const aLeftOfBRight = bufferedRectA.x + bufferedRectA.width > bufferedRectB.x;
+//    if (!aLeftOfBRight) return false;
 
-   const aAboveBBottom = bufferedRectA.y + bufferedRectA.height > bufferedRectB.y;
-   if (!aAboveBBottom) return false;
+//    const aBelowBTop = bufferedRectA.y < bufferedRectB.y + bufferedRectB.height;
+//    if (!aBelowBTop) return false;
 
-   return true;
-};
+//    const aAboveBBottom = bufferedRectA.y + bufferedRectA.height > bufferedRectB.y;
+//    if (!aAboveBBottom) return false;
 
-const getNextOpenPos = (
-   store: BtcNode[],
-   gameSize: { width: number; height: number },
-): Position => {
-   if (store.length === 0) {
-      return {
-         x: gameSize.width * 0.5 - 10,
-         y: gameSize.height * 0.5 - 10,
-      };
-   }
+//    return true;
+// };
 
-   const nodeBuffer = 50;
+// const getNextOpenPos = (
+//    store: BtcNode[],
+//    gameSize: { width: number; height: number },
+// ): Position => {
+//    if (store.length === 0) {
+//       return {
+//          x: gameSize.width * 0.5 - 10,
+//          y: gameSize.height * 0.5 - 10,
+//       };
+//    }
 
-   for (let i = 0; i < store.length; i++) {
-      const node = store[i];
-      const surroundingRects = getSurroundingPos(node);
+//    const nodeBuffer = 50;
 
-      const orderedKeys: posKey[] = [
-         "top",
-         "topRight",
-         "bottomRight",
-         "bottom",
-         "bottomLeft",
-         "topLeft",
-      ];
+//    for (let i = 0; i < store.length; i++) {
+//       const node = store[i];
+//       const surroundingRects = getSurroundingPos(node);
 
-      for (const key of orderedKeys) {
-         const potentialRect = surroundingRects[key];
+//       const orderedKeys: posKey[] = [
+//          "top",
+//          "topRight",
+//          "bottomRight",
+//          "bottom",
+//          "bottomLeft",
+//          "topLeft",
+//       ];
 
-         if (potentialRect.x < 10 || potentialRect.y < 10) continue;
-         if (potentialRect.x + potentialRect.width + nodeBuffer > gameSize.width)
-            continue;
-         if (potentialRect.y + potentialRect.height + nodeBuffer > gameSize.height)
-            continue;
+//       for (const key of orderedKeys) {
+//          const potentialRect = surroundingRects[key];
 
-         const collides = store.some((n) =>
-            rectsCollide({
-               rectA: potentialRect,
-               rectB: n.toRect(),
-               buffer: nodeBuffer,
-            }),
-         );
+//          if (potentialRect.x < 10 || potentialRect.y < 10) continue;
+//          if (potentialRect.x + potentialRect.width + nodeBuffer > gameSize.width)
+//             continue;
+//          if (potentialRect.y + potentialRect.height + nodeBuffer > gameSize.height)
+//             continue;
 
-         if (collides) continue;
+//          const collides = store.some((n) =>
+//             rectsCollide({
+//                rectA: potentialRect,
+//                rectB: n.toRect(),
+//                buffer: nodeBuffer,
+//             }),
+//          );
 
-         return {
-            x: potentialRect.x + potentialRect.width * 0.5,
-            y: potentialRect.y + potentialRect.height * 0.5,
-         };
-      }
-   }
+//          if (collides) continue;
 
-   console.warn("No open position found around any existing nodes.");
-   return { x: -1, y: -1 };
-};
+//          return {
+//             x: potentialRect.x + potentialRect.width * 0.5,
+//             y: potentialRect.y + potentialRect.height * 0.5,
+//          };
+//       }
+//    }
+
+//    console.warn("No open position found around any existing nodes.");
+//    return { x: -1, y: -1 };
+// };

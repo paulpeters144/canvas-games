@@ -27,7 +27,7 @@ test("nodeConnection", () => {
    const gameVars = createGameVars(new PIXI.Container(), createGameAssetsMock());
    const nodes = Array.from({ length: 5 }).map(() => {
       const n = createBtcNode({ gameVars });
-      n.wallet.setNewUTXOs(createUTXOs(20));
+      n.wallet.setUTXOs(createUTXOs(20));
       return n;
    });
    for (const outerNode of nodes) {
@@ -36,7 +36,7 @@ test("nodeConnection", () => {
          innerNode.connections().connect(outerNode);
       }
    }
-   nodes[0].sendBtc({ units: 1, node: nodes[1] });
+   nodes[0].createTx({ units: 1, node: nodes[1] });
 });
 
 const createUTXOs = (len: number) => {

@@ -61,9 +61,9 @@ export const createNodeConnectionSystem = (
          line?.destroy();
       }
 
-      for (const n of store.data()) n.connections().disconnect();
+      for (const n of store.activeData()) n.connections().disconnect();
 
-      for (const nextNode of store.data()) {
+      for (const nextNode of store.activeData()) {
          if (nextNode.connections().connectCount() >= 8) continue;
          getClosestNodes({ node: nextNode, count: 6, store: store }).map((n) => {
             nextNode.connections().connect(n);
@@ -108,7 +108,7 @@ interface closestNodeProps {
 
 const getClosestNodes = (props: closestNodeProps): BtcNode[] => {
    const { node, count, store } = props;
-   const allNodes = store.data();
+   const allNodes = store.activeData();
 
    const nodesWithDistances: nodeWithDistance[] = [];
 

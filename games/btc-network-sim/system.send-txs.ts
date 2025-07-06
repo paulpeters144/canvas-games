@@ -15,7 +15,7 @@ export const createSendTxSystem = (props: props): SendRandTxSystem => {
    const { store } = props;
 
    const getRandIdxs = () => {
-      const allNodes = store.data();
+      const allNodes = store.activeData();
       const sendIdx = randNum({
          min: 0,
          max: allNodes.length,
@@ -42,7 +42,7 @@ export const createSendTxSystem = (props: props): SendRandTxSystem => {
 
    const fireRandomTx = () => {
       try {
-         const allNodes = store.data();
+         const allNodes = store.activeData();
          if (allNodes.length < 2) return;
 
          const { sendIdx, recIdx } = getRandIdxs();
@@ -65,8 +65,8 @@ export const createSendTxSystem = (props: props): SendRandTxSystem => {
       } catch (_) {}
    };
 
-   const sendBtcInterval = (() => {
-      let eventInterval = randNum({ min: 1500, max: 3000 });
+   const createTxInterval = (() => {
+      let eventInterval = randNum({ min: 2500, max: 3000 });
       let currentTick = 0;
       return {
          update: (t: PIXI.Ticker) => {
@@ -82,7 +82,7 @@ export const createSendTxSystem = (props: props): SendRandTxSystem => {
 
    return {
       update: (tick: PIXI.Ticker) => {
-         sendBtcInterval.update(tick);
+         createTxInterval.update(tick);
       },
    };
 };

@@ -1,9 +1,9 @@
 import { eBus } from "games/util/event-bus";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
-import { type NodeFactory, createNodeFactory } from "./factory.node";
 import { ZLayer } from "./game.enums";
 import { type GameVars, createGameVars } from "./game.vars";
+import { type UTXOSet, createUtxoSet } from "./model.utxo-set";
 import { type NodeStore, createNodeStore } from "./store.nodes";
 import { type TxMessageSystem, createTxMessageSystem } from "./system.move-tx";
 import {
@@ -11,12 +11,14 @@ import {
    createNodeConnectionSystem,
 } from "./system.node-connection";
 import { setupNodeFocus } from "./system.node-focus";
-import { createSendTxSystem } from "./system.send-txs";
+import { type SendRandTxSystem, createSendTxSystem } from "./system.send-txs";
+import type { Block } from "./types";
 import { createBackground } from "./ui.background";
 import { createDataWidget } from "./ui.block-data";
 import { createLoadingOverlay } from "./ui.loading-overlay";
 import { setMouseImages } from "./ui.mouse";
-import { createNodeCounterUI } from "./ui.node-ctrl";
+import { type NodeCounterUI, createNodeCounterUI } from "./ui.node-ctrl";
+import { randNum, sleep } from "./util";
 import { type Camera, createCamera } from "./util.camera";
 import type { EventMap } from "./util.events";
 
@@ -76,73 +78,69 @@ export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
 
 export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => {
    const { game, assets } = gameVars;
-
+   let nodeCountUI: NodeCounterUI | undefined;
+   let systemNodeConnect: ConnectionSystem | undefined;
+   let systemMoveTx: TxMessageSystem | undefined;
+   let systemSendTx: SendRandTxSystem | undefined;
+   let store: NodeStore | undefined;
+   let utxoSet: UTXOSet | undefined;
    const camera = createCamera(app, game);
-   const background = createBackground({
-      rows: 20,
-      cols: 41,
-   });
-   const nodeCountUI = createNodeCounterUI(app);
-   createLoadingOverlay(app);
-   const store = createNodeStore();
-   const factory = createNodeFactory({ gameVars, store });
-   const systemNodeConnect = createNodeConnectionSystem({ gameVars, store });
-   const systemMoveTx = createTxMessageSystem(gameVars);
-   const systemSendTx = createSendTxSystem({ store });
-   createDataWidget({
-      game: game,
-      camera,
-      store: store,
-      pixelSize: 2.01,
-      width: 70,
-      height: 95,
-   });
-
-   setMouseImages(app);
-
-   createBusListeningEvents({
-      gameVars,
-      store,
-      factory,
-      systemNodeConnect,
-      systemMoveTx,
-      camera,
-   });
 
    return {
       load: async () => {
          await assets.load();
+
+         const background = createBackground({
+            rows: 20,
+            cols: 41,
+         });
          game.addChild(background.ctr);
+         store = createNodeStore(gameVars);
+         utxoSet = createUtxoSet(store);
+         nodeCountUI = createNodeCounterUI(app);
+         createLoadingOverlay(app);
+         systemNodeConnect = createNodeConnectionSystem({ gameVars, store });
+         systemMoveTx = createTxMessageSystem(gameVars);
+         systemSendTx = createSendTxSystem({ store });
+         createBusListeningEvents({
+            gameVars,
+            store,
+            systemNodeConnect,
+            systemMoveTx,
+            nodeCountUI,
+            camera,
+         });
+         createDataWidget({
+            game: game,
+            camera,
+            store: store,
+            pixelSize: 2.01,
+            width: 70,
+            height: 95,
+         });
+
+         setMouseImages(app);
+
+         bus.fire("node", { count: 19 });
+
+         initMineBtc({ store, utxoSet });
+
          game.visible = false;
          nodeCountUI.ctr.visible = false;
-         bus.fire("node", { count: 19 });
-         setTimeout(() => {
-            const index = 0;
-            const node = store.data()[index].anim;
-            const e = {} as PIXI.FederatedPointerEvent;
-            // node.emit("pointerdown", e);
-         }, 1750);
 
          setTimeout(() => {
-            game.visible = true;
-            nodeCountUI.ctr.visible = true;
-            camera.animate({
-               time: 0,
-               position: {
-                  x: camera.worldWidth() / 2,
-                  y: camera.worldHeight() / 2 - 10,
-               },
-               scale: 1.15,
-               ease: "linear",
-            });
-            bus.fire("gameLoaded", true);
+            if (!store) return;
+            const index = 0;
+            const node = store.activeData()[index].anim;
+            const e = {} as PIXI.FederatedPointerEvent;
+            // node.emit("pointerdown", e);
          }, 1750);
       },
 
       update: (tick: PIXI.Ticker) => {
-         nodeCountUI.update(tick);
-         systemSendTx.update(tick);
-         systemMoveTx.update(tick);
+         nodeCountUI?.update(tick);
+         systemSendTx?.update(tick);
+         systemMoveTx?.update(tick);
       },
    };
 };
@@ -150,54 +148,67 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
 const createBusListeningEvents = (props: {
    gameVars: GameVars;
    store: NodeStore;
-   factory: NodeFactory;
+   camera: Camera;
    systemNodeConnect?: ConnectionSystem;
    systemMoveTx?: TxMessageSystem;
-   camera: Camera;
+   nodeCountUI?: NodeCounterUI;
 }) => {
-   const { systemNodeConnect, gameVars, systemMoveTx, store, factory, camera } =
-      props;
+   const { gameVars, store, camera } = props;
+   const { systemNodeConnect, nodeCountUI, systemMoveTx } = props;
    const { game } = gameVars;
 
    bus.on("node", (e) => {
       if (e.count > store.count()) {
          while (e.count > store.count()) {
-            const newNode = factory.create();
-
+            const newNode = store.add();
             setupNodeFocus({
                game,
                camera,
                node: newNode,
                store,
             });
-
-            store.push(newNode);
-            systemNodeConnect?.setup();
          }
       }
       if (e.count < store.count()) {
          while (e.count < store.count()) {
-            const node = store.pop();
-            node?.destroy();
+            store.remove();
          }
-         systemNodeConnect?.setup();
       }
+      systemNodeConnect?.setup();
    });
 
    bus.on("randSend", (e) => {
       try {
-         const allNodes = store.data();
-         const receivingNode = allNodes.find((n) => n.ip() === e.toId);
-         const sendingNode = allNodes.find((n) => n.ip() === e.fromId);
+         const allNodes = store.activeData();
+         const recNode = allNodes.find((n) => n.ip() === e.toId);
+         const senderNode = allNodes.find((n) => n.ip() === e.fromId);
 
-         if (!sendingNode || !receivingNode) return;
-         if (receivingNode.ip() === e.fromId) return;
-         sendingNode.sendBtc({ units: e.units, node: receivingNode });
-      } catch (_) {}
+         if (!senderNode || !recNode) return;
+         if (recNode.ip() === e.fromId) return;
+         const tx = senderNode.createTx({ units: e.units, node: recNode });
+         bus.fire("newTx", { originId: senderNode.ip(), tx: tx });
+      } catch (e) {
+         // console.error(e);
+      }
+   });
+
+   bus.on("gameLoaded", (e) => {
+      if (!nodeCountUI) return;
+      game.visible = true;
+      nodeCountUI.ctr.visible = true;
+      camera.animate({
+         time: 0,
+         position: {
+            x: camera.worldWidth() / 2,
+            y: camera.worldHeight() / 2 - 10,
+         },
+         scale: 1.15,
+         ease: "linear",
+      });
    });
 
    bus.on("newTx", (e) => {
-      const originNode = store.data().find((n) => n.ip() === e.originId);
+      const originNode = store.activeData().find((n) => n.ip() === e.originId);
       if (!originNode) return;
       const connectingNodes = originNode.connections().getAll();
       connectingNodes.map((n) => {
@@ -209,4 +220,74 @@ const createBusListeningEvents = (props: {
          });
       });
    });
+};
+
+interface InitBtcProps {
+   store: NodeStore;
+   utxoSet: UTXOSet;
+}
+
+const initMineBtc = async (props: InitBtcProps): Promise<void> => {
+   const { store, utxoSet } = props;
+   const firstNode = store.activeData()[0];
+   const allNodes = store.allData();
+
+   await sleep(0);
+   {
+      const emptyBlock = firstNode.blockchain.createEmptyBlock([]);
+      firstNode.miner.setNextBlockToMine(emptyBlock);
+      let genesisBlock: Block | undefined;
+      do {
+         genesisBlock = firstNode.miner.minGenesisBlock();
+      } while (!genesisBlock);
+      firstNode.blockchain.addBlock(genesisBlock);
+      utxoSet.handleNewlyMinedBlock(genesisBlock);
+      for (const n of allNodes) {
+         n.blockchain.addBlock(genesisBlock);
+      }
+   }
+
+   const mineBlock = async (nodeIdx: number) => {
+      const nextNode = allNodes[nodeIdx];
+      const mempoolTxs = nextNode.mempool.getAllTxs();
+      const emptyBlock = nextNode.blockchain.createEmptyBlock(mempoolTxs);
+      nextNode.miner.setNextBlockToMine(emptyBlock);
+      let nextBlock: Block | undefined;
+      do {
+         nextBlock = nextNode.miner.mineNextBlock(emptyBlock);
+      } while (!nextBlock);
+      nextNode.blockchain.addBlock(nextBlock);
+      utxoSet.handleNewlyMinedBlock(nextBlock);
+      await sleep(0);
+      for (let i = 0; i < allNodes.length; i++) {
+         allNodes[i].blockchain.addBlock(nextBlock);
+      }
+   };
+
+   for (let i = 1; i < allNodes.length; i++) {
+      await mineBlock(i);
+   }
+
+   for (const outNode of allNodes) {
+      const data = { units: 50, to: 150 };
+      const tx = outNode.wallet.splitUTXOs(data);
+      for (const inNode of allNodes) {
+         // TOOD: recieve should be on the wallet, I think...
+         inNode.receiveTx(tx);
+      }
+   }
+
+   const randIdx = randNum({ min: 0, max: 126 });
+   await mineBlock(randIdx);
+
+   for (const n of store.allData()) {
+      const bal = n.wallet.balance();
+      console.log(
+         `${n.wallet.addr().slice(0, 10)}...:${bal}`,
+         "utxo count:",
+         n.wallet.utxos().length,
+      );
+   }
+
+   bus.fire("gameLoaded", true);
 };

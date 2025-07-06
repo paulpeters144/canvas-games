@@ -39,6 +39,34 @@ test("simple btc tx example", () => {
    );
 });
 
+test("splitting utxo's to multiple", () => {
+   const wallet1 = createBtcWallet();
+
+   const utxos: UTXO[] = Array.from({ length: 15 }).map((_, i) => {
+      return {
+         id: standard.idStr(),
+         value: standard.numAsStr(i + 1),
+         owner: "",
+      };
+   });
+   wallet1.setUTXOs(utxos);
+   console.log("w1 bal: ", wallet1.balance());
+
+   const transaction = wallet1.splitUTXOs({ units: 100, to: 100 });
+
+   console.log(JSON.stringify(transaction, null, 2));
+
+   if (!validate.txSig(transaction)) throw Error();
+   if (!validate.txHash(transaction)) throw Error();
+
+   console.log("w1 bal: ", wallet1.balance());
+
+   const txFee = Number(transaction.fee);
+   const txOutputs = transaction.outputs.reduce((a, c) => a + Number(c.value), 0);
+   const walBal = wallet1.balance();
+   console.log("all val:", walBal + txFee + txOutputs);
+});
+
 test("validate merkle root", () => {
    const wallet1 = createBtcWallet();
    const wallet2 = createBtcWallet();
@@ -76,9 +104,8 @@ test("test mining blocks", () => {
 
    miner.setNextBlockToMine(blockChain.createEmptyBlock([]));
    let gBlock: Block | undefined;
-   let nonce = 0;
    do {
-      gBlock = miner.minGenesisBlock(nonce++);
+      gBlock = miner.minGenesisBlock();
    } while (!gBlock);
    console.log("genesis block", gBlock);
 
@@ -86,9 +113,8 @@ test("test mining blocks", () => {
 
    miner.setNextBlockToMine(blockChain.createEmptyBlock([]));
    let nextBlock: Block | undefined;
-   nonce = 0;
    do {
-      nextBlock = miner.minGenesisBlock(nonce++);
+      nextBlock = miner.minGenesisBlock();
    } while (!nextBlock);
    console.log("next block", nextBlock);
 });
