@@ -12,7 +12,7 @@ export const createMineBtcSystem = (props: {
    const { store, utxoSet } = props;
    let isMining = false;
    let lastBtcMined = performance.now();
-   let eventInterval = 3500;
+   let eventInterval = 150;
 
    const mineNextBtc = async () => {
       isMining = true;
@@ -26,8 +26,8 @@ export const createMineBtcSystem = (props: {
       });
       node.miner.setNextBlockToMine(block);
       let nextBlock: BtcBlock | undefined;
-      for (let i = 0; i < 100; i++) {
-         if (i % 2 === 1) await sleep(0);
+      for (let i = 0; i < 150; i++) {
+         if (i % 5 === 1) await sleep(0);
          nextBlock = node.miner.mineNextBlock(block);
          if (nextBlock) break;
       }
@@ -36,15 +36,16 @@ export const createMineBtcSystem = (props: {
          utxoSet.handleNewlyMinedBlock(b);
          node.addBlock(b);
          const timeMinedMs = performance.now() - lastBtcMined;
-         if (timeMinedMs > 15000 && eventInterval > 500) {
-            eventInterval -= 500;
+         if (timeMinedMs > 15000 && eventInterval > 50) {
+            eventInterval -= 50;
          }
-         if (timeMinedMs < 15000 && eventInterval < 20000) {
-            eventInterval += 500;
+         if (timeMinedMs < 15000 && eventInterval < 2000) {
+            eventInterval += 50;
          }
 
+         console.log("timeMinedMs", timeMinedMs);
          console.log("award addr", node.wallet.addr());
-         console.log("block mined", block);
+         // console.log("block mined", block);
          lastBtcMined = performance.now();
          bus.fire("fwdBlock", {
             block: structuredClone(b),
@@ -66,12 +67,12 @@ export const createMineBtcSystem = (props: {
          update: (t: PIXI.Ticker) => {
             if (!gameLoaded || isMining) return;
             if (startTick >= eventInterval) {
-               startTick += t.deltaMS;
+               console.log("mining atempt");
+               mineNextBtc();
+               startTick = 0;
                return;
             }
-            startTick = 0;
-            console.log("mining atempt");
-            mineNextBtc();
+            startTick += t.deltaMS;
          },
       };
    })();
