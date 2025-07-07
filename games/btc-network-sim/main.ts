@@ -123,9 +123,8 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
             height: 95,
          });
 
-         setMouseImages(app);
-
          bus.fire("node", { count: 19 });
+         setMouseImages(app);
 
          initMineBtc({ store, utxoSet });
 
@@ -134,9 +133,9 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
 
          setTimeout(() => {
             if (!store) return;
-            const index = 0;
-            const node = store.activeNodes()[index].anim;
-            const e = {} as PIXI.FederatedPointerEvent;
+            // const index = 0;
+            // const node = store.activeNodes()[index].anim;
+            // const e = {} as PIXI.FederatedPointerEvent;
             // node.emit("pointerdown", e);
          }, 1750);
       },

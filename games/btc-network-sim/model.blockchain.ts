@@ -54,8 +54,9 @@ const globalBlockchain = (() => {
    };
 
    const addBlock = (block: BtcBlock): boolean => {
-      if (blockHashSet.has(block.hash)) return false;
-      blockHashSet.add(block.hash);
+      const slicedHash = block.hash.slice(0, 20);
+      if (blockHashSet.has(slicedHash)) return false;
+      blockHashSet.add(slicedHash);
 
       try {
          const lastChunk = _getChunkData(chunkCount);
@@ -95,7 +96,9 @@ export const createBlockchain = (): Blockchain => {
    const blockHashSet = new Set<string>();
 
    const addBlock = (block: BtcBlock): boolean => {
-      if (blockHashSet.has(block.hash)) return false;
+      const slicedHash = block.hash.slice(0, 20);
+      if (blockHashSet.has(slicedHash)) return false;
+      blockHashSet.add(slicedHash);
 
       // skipping this portion because it takes up too much compute for 100+ nodes
       // and each of them have to validate all the txs. If we we're working with 1

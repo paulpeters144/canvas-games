@@ -28,11 +28,11 @@ export const createNodeStore = (gameVars: GameVars): NodeStore => {
       const node = createBtcNode({ gameVars, pos });
       // Optionally visualize surrounding slots:
       // displayOpenNeighborSlots({ node, game });
-      if (cache.length !== 0) node.anim.visible = false;
+      node.anim.visible = false;
       cache.push(node);
    }
 
-   let len = 1;
+   let len = 0;
    const add = () => {
       if (len === MAX_NODE_COUNT) return undefined;
       const result = cache[len];
