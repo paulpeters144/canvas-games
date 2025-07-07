@@ -9,4 +9,5 @@ export type EventMap = {
    focusNode: { isFocused: true; ip: string } | { isFocused: false };
    gameLoaded: boolean;
    fwdBlock: { block: BtcBlock; fromAddr: string };
+   nodeIdx: { direction: "left" | "right"; ip: string };
 };

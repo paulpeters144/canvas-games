@@ -20,15 +20,20 @@ export const setupNodeFocus = (props: {
    NODE_FOCUSED = "";
    LAST_POS = { x: 0, y: 0 };
    LAST_ZOOM_PERCENT = 1;
+   const nodeIdx = store.allData().indexOf(node);
 
-   node.anim.on("pointerdown", () => {
+   node.anim.on("pointerdown", (e) => {
       if (NODE_FOCUSED) return;
 
       camera.enableDrag(false);
       camera.enableZoom(false);
       NODE_FOCUSED = node.ip();
-      LAST_POS = camera.centerPos();
-      LAST_ZOOM_PERCENT = camera.zoomPercent();
+      node.ipText.setInteractive(true);
+
+      if (e.pointerType !== "keepLastPos") {
+         LAST_POS = camera.centerPos();
+         LAST_ZOOM_PERCENT = camera.zoomPercent();
+      }
 
       store.activeNodes().map((n) => {
          n.anim.interactive = false;
@@ -56,6 +61,27 @@ export const setupNodeFocus = (props: {
       });
    });
 
+   bus.on("nodeIdx", (e) => {
+      if (e.ip !== node.ip()) return;
+      bus.fire("focusNode", { isFocused: false });
+
+      let nextIdx = e.direction === "left" ? nodeIdx - 1 : nodeIdx + 1;
+      nextIdx = nextIdx >= store.activeNodes().length ? 0 : nextIdx;
+      const nextNode = store.activeNodes()[nextIdx];
+
+      NODE_FOCUSED = "";
+      store.activeNodes().map((n) => {
+         n.anim.interactive = true;
+         n.anim.alpha = 1;
+         n.anim.filters = [];
+         n.ipText.setInteractive(false);
+      });
+      const selectEvent = {
+         pointerType: "keepLastPos",
+      } as PIXI.FederatedPointerEvent;
+      nextNode.anim.emit("pointerdown", selectEvent);
+   });
+
    bus.on("focusNode", (e) => {
       if (e.isFocused) return;
       if (!NODE_FOCUSED) return;
@@ -68,6 +94,7 @@ export const setupNodeFocus = (props: {
          n.anim.interactive = true;
          n.anim.alpha = 1;
          n.anim.filters = [];
+         n.ipText.setInteractive(false);
       });
 
       camera.animate({

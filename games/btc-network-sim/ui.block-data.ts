@@ -136,14 +136,14 @@ export const createDataWidget = (props: {
       pixelGraphic.y = vpBounds.top;
 
       // Top area (above the node)
-      const topBuffer = 15;
+      const topBuffer = 5;
       offClickAreaTop.x = vpBounds.x;
       offClickAreaTop.y = vpBounds.y;
       offClickAreaTop.width = pixelGraphic.x - vpBounds.x;
       offClickAreaTop.height = nodeRect.y - vpBounds.y - topBuffer;
 
       // Bottom area (below the node)
-      const btmBuffer = 25;
+      const btmBuffer = 15;
       offClickAreaBtm.x = vpBounds.x;
       offClickAreaBtm.y = nodeRect.y + nodeRect.h + btmBuffer;
       offClickAreaBtm.width = pixelGraphic.x - vpBounds.x;
@@ -151,14 +151,14 @@ export const createDataWidget = (props: {
          vpBounds.bottom - (nodeRect.y + nodeRect.h + btmBuffer);
 
       // Left area (beside the node vertically, to the left of the node)
-      const ltBuffer = 15;
+      const ltBuffer = 25;
       offClickAreaLt.x = vpBounds.x;
       offClickAreaLt.y = offClickAreaTop.y + offClickAreaTop.height;
       offClickAreaLt.width = nodeRect.x - vpBounds.x - ltBuffer;
       offClickAreaLt.height = offClickAreaBtm.y - offClickAreaLt.y;
 
       // Right area (between node and pixelGraphic)
-      const rtBuffer = 15;
+      const rtBuffer = 25;
       offClickAreaRt.x = nodeRect.x + nodeRect.w + rtBuffer;
       offClickAreaRt.y = offClickAreaTop.y + offClickAreaTop.height;
       offClickAreaRt.width = pixelGraphic.x - (nodeRect.x + nodeRect.w + rtBuffer);

@@ -2,6 +2,7 @@ import { OutlineFilter } from "pixi-filters";
 import * as PIXI from "pixi.js";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
+import { bus } from "./main";
 import { type Blockchain, createBlockchain } from "./model.blockchain";
 import { type BtcMiner, createMiner } from "./model.btc-miner";
 import { type NodeConnections, createConnections } from "./model.connection";
@@ -50,24 +51,32 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
    anim.animationSpeed = 0.07;
    anim.play();
    anim.currentFrame = randNum({ min: 0, max: frames - 1 });
+   anim.zIndex = ZLayer.mid;
+
+   const text = createDisplayText(ip);
+   text.ctr.zIndex = ZLayer.mid;
+   text.setInteractive(false);
 
    const filter = new OutlineFilter({ thickness: 2, color: "#FFFFFF" });
    anim.interactive = true;
    anim.on("pointerenter", () => {
       anim.cursor = "pointer";
       anim.filters = [filter];
+      text.showIp(true);
    });
 
    anim.on("pointerleave", () => {
       anim.filters = [];
       anim.cursor = "default";
+      text.showIp(false);
    });
 
-   anim.zIndex = ZLayer.mid;
-   game.addChild(anim);
+   game.addChild(anim, text.ctr);
 
    anim.x = pos ? pos.x - anim.width * 0.5 : 0;
    anim.y = pos ? pos.y - anim.height * 0.5 : 0;
+   text.ctr.y = anim.y + anim.height + 5;
+   text.ctr.x = anim.x + anim.width * 0.5 - text.ctr.width * 0.5;
 
    const toRect = () => {
       return new PIXI.Rectangle(anim.x, anim.y, anim.width, anim.height);
@@ -96,6 +105,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
 
    return {
       anim,
+      ipText: text,
       createdAt: () => createdAt,
       ip: () => ip,
       destroy,
@@ -125,9 +135,104 @@ export interface BtcNode {
    pos: () => Position;
    addBlock: (block: BtcBlock) => boolean;
    anim: PIXI.AnimatedSprite;
+   ipText: NodeDisplayText;
    createTx: (props: { units: number; node: BtcNode }) => BlockTx;
    miner: BtcMiner;
    blockchain: Blockchain;
    wallet: BtcWallet;
    mempool: Mempool;
+}
+
+const createDisplayText = (ip: string): NodeDisplayText => {
+   const ctr = new PIXI.Container();
+
+   const leftChevron = new PIXI.Text({
+      style: new PIXI.TextStyle({
+         fontFamily: "consolas",
+         fontSize: 10,
+         fill: "white",
+         fontWeight: "900",
+      }),
+      text: "<",
+      resolution: 8,
+      x: 0,
+      y: -2,
+   });
+   leftChevron.on("pointerenter", () => {
+      leftChevron.cursor = "pointer";
+   });
+   leftChevron.on("pointerleave", () => {
+      leftChevron.cursor = "default";
+   });
+   leftChevron.on("pointerdown", () => {
+      bus.fire("nodeIdx", { direction: "left", ip: ip });
+   });
+
+   const text = new PIXI.Text({
+      style: new PIXI.TextStyle({
+         fontFamily: "consolas",
+         fontSize: 8,
+         fill: "white",
+         fontWeight: "900",
+      }),
+      text: `${ip}`,
+      resolution: 8,
+      x: leftChevron.width + 5,
+   });
+
+   const rightChevron = new PIXI.Text({
+      style: new PIXI.TextStyle({
+         fontFamily: "consolas",
+         fontSize: 10,
+         fill: "white",
+         fontWeight: "900",
+      }),
+      text: ">",
+      resolution: 8,
+      x: text.x + text.width + 5,
+      y: -2,
+   });
+   rightChevron.on("pointerenter", () => {
+      rightChevron.cursor = "pointer";
+   });
+   rightChevron.on("pointerleave", () => {
+      rightChevron.cursor = "default";
+   });
+   rightChevron.on("pointerdown", () => {
+      bus.fire("nodeIdx", { direction: "right", ip: ip });
+   });
+
+   ctr.addChild(leftChevron, text, rightChevron);
+
+   return {
+      ctr,
+      setInteractive: (value: boolean) => {
+         rightChevron.interactive = value;
+         leftChevron.interactive = value;
+         ctr.visible = value;
+         if (value) {
+            rightChevron.visible = true;
+            leftChevron.visible = true;
+         }
+      },
+      showIp: (value: boolean) => {
+         if (value) {
+            rightChevron.visible = false;
+            leftChevron.visible = false;
+            text.visible = true;
+            ctr.visible = true;
+         } else {
+            rightChevron.visible = true;
+            leftChevron.visible = true;
+            text.visible = true;
+            ctr.visible = false;
+         }
+      },
+   };
+};
+
+interface NodeDisplayText {
+   ctr: PIXI.Container<PIXI.ContainerChild>;
+   setInteractive: (value: boolean) => void;
+   showIp: (value: boolean) => void;
 }

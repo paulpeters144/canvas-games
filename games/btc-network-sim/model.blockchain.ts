@@ -85,13 +85,6 @@ const globalBlockchain = (() => {
    };
 })();
 
-export interface Blockchain {
-   addBlock: (block: BtcBlock) => boolean;
-   createEmptyBlock: (props: { txs: BlockTx[]; difficulty?: number }) => BtcBlock;
-   getUtxoRewardFrom: (b: BtcBlock) => UTXO[];
-   blocks: () => BtcBlock[];
-}
-
 export const createBlockchain = (): Blockchain => {
    const blockHashSet = new Set<string>();
 
@@ -187,3 +180,10 @@ export const createBlockchain = (): Blockchain => {
       blocks: () => globalBlockchain.blocks(),
    };
 };
+
+export interface Blockchain {
+   addBlock: (block: BtcBlock) => boolean;
+   createEmptyBlock: (props: { txs: BlockTx[]; difficulty?: number }) => BtcBlock;
+   getUtxoRewardFrom: (b: BtcBlock) => UTXO[];
+   blocks: () => BtcBlock[];
+}

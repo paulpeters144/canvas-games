@@ -43,8 +43,8 @@ export const createMineBtcSystem = (props: {
             eventInterval += 50;
          }
 
-         console.log("timeMinedMs", timeMinedMs);
-         console.log("award addr", node.wallet.addr());
+         // console.log("timeMinedMs", timeMinedMs);
+         // console.log("award addr", node.wallet.addr());
          // console.log("block mined", block);
          lastBtcMined = performance.now();
          bus.fire("fwdBlock", {
@@ -67,7 +67,7 @@ export const createMineBtcSystem = (props: {
          update: (t: PIXI.Ticker) => {
             if (!gameLoaded || isMining) return;
             if (startTick >= eventInterval) {
-               console.log("mining atempt");
+               // console.log("mining atempt");
                mineNextBtc();
                startTick = 0;
                return;
