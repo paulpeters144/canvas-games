@@ -1,12 +1,13 @@
 import type { BlockTx, BtcBlock, UTXO } from "./types";
 import { standard } from "./util";
 
-// if you're reading this, you may be wondering why there is a global blockchain?
-// and if you also thinking: "this defeats the purpose of having a decentralized ledger"
+// if you're reading this, you may be wondering: "why there is a global blockchain?"
+// and if you also thinking: "this defeats the purpose of having a decentralized ledger,"
 // then you'd be correct. however, let's remember, this application is a "SIMULATION"
-// which means it's not the real thing. There are big memory issues setting up
+// which means it's not the real thing. there are big memory issues setting up
 // a blockchain for 100+ nodes as you can image. so this is cheating but it's
 // cheating to give your web browser and its resources a break.
+
 const globalBlockchain = (() => {
    const baseStoreKey = "blockchain";
    let chunkCount = 0;
@@ -19,7 +20,7 @@ const globalBlockchain = (() => {
 
    const _tooLarge = (blocks: BtcBlock[]) => {
       const str = JSON.stringify(blocks);
-      const result = str.length > 35_000;
+      const result = str.length > 75_000;
       return result;
    };
 
