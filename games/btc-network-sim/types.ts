@@ -12,7 +12,7 @@ export interface BlockHeader {
    nonce: number;
 }
 
-export interface Block {
+export interface BtcBlock {
    hash: string;
    height: number;
    header: BlockHeader;

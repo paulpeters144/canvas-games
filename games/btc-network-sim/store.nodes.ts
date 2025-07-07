@@ -7,7 +7,7 @@ const MAX_NODE_COUNT = 127;
 
 export interface NodeStore {
    count: () => number;
-   activeData: () => BtcNode[];
+   activeNodes: () => BtcNode[];
    allData: () => BtcNode[];
    add: () => BtcNode | undefined;
    remove: () => BtcNode | undefined;
@@ -51,7 +51,7 @@ export const createNodeStore = (gameVars: GameVars): NodeStore => {
 
    return {
       count: () => len,
-      activeData: () => cache.slice(0, len),
+      activeNodes: () => cache.slice(0, len),
       allData: () => cache,
       add,
       remove,

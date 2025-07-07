@@ -2,7 +2,7 @@ import { test } from "vitest";
 import { createBlockchain } from "./model.blockchain";
 import { createMiner } from "./model.btc-miner";
 import { createBtcWallet } from "./model.wallet";
-import type { Block, BlockTx, UTXO } from "./types";
+import type { BlockTx, BtcBlock, UTXO } from "./types";
 import { standard, validate } from "./util";
 
 test("simple btc tx example", () => {
@@ -103,7 +103,7 @@ test("test mining blocks", () => {
    const blockChain = createBlockchain();
 
    miner.setNextBlockToMine(blockChain.createEmptyBlock([]));
-   let gBlock: Block | undefined;
+   let gBlock: BtcBlock | undefined;
    do {
       gBlock = miner.minGenesisBlock();
    } while (!gBlock);
@@ -112,7 +112,7 @@ test("test mining blocks", () => {
    blockChain.addBlock(gBlock);
 
    miner.setNextBlockToMine(blockChain.createEmptyBlock([]));
-   let nextBlock: Block | undefined;
+   let nextBlock: BtcBlock | undefined;
    do {
       nextBlock = miner.minGenesisBlock();
    } while (!nextBlock);

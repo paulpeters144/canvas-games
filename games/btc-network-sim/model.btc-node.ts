@@ -7,7 +7,7 @@ import { type BtcMiner, createMiner } from "./model.btc-miner";
 import { type NodeConnections, createConnections } from "./model.connection";
 import { type Mempool, createMempool } from "./model.mempool";
 import { type BtcWallet, createBtcWallet } from "./model.wallet";
-import type { BlockTx, Position } from "./types";
+import type { BlockTx, BtcBlock, Position } from "./types";
 import { randNum, standard } from "./util";
 
 interface BtcNodeProps {
@@ -81,17 +81,17 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       return tx;
    };
 
-   const receiveTx = (tx: BlockTx) => {
-      if (mempool.hasTx(tx)) return false;
-      mempool.add(tx);
-      return true;
-   };
-
    const destroy = () => {
       if (anim.parent) {
          anim.parent.removeChild(anim);
       }
       anim.destroy();
+   };
+
+   const addBlock = (block: BtcBlock): boolean => {
+      if (!blockchain.addBlock(block)) return false;
+      block.transactions.map((tx) => mempool.remove(tx));
+      return true;
    };
 
    return {
@@ -101,8 +101,8 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
       destroy,
       toRect,
       connections: () => connections,
+      addBlock,
       createTx,
-      receiveTx,
       wallet,
       mempool,
       blockchain,
@@ -123,9 +123,9 @@ export interface BtcNode {
    toRect: () => PIXI.Rectangle;
    connections: () => NodeConnections;
    pos: () => Position;
+   addBlock: (block: BtcBlock) => boolean;
    anim: PIXI.AnimatedSprite;
    createTx: (props: { units: number; node: BtcNode }) => BlockTx;
-   receiveTx: (tx: BlockTx) => boolean;
    miner: BtcMiner;
    blockchain: Blockchain;
    wallet: BtcWallet;

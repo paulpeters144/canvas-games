@@ -3,8 +3,10 @@ import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { ZLayer } from "./game.enums";
 import { type GameVars, createGameVars } from "./game.vars";
+import type { BtcNode } from "./model.btc-node";
 import { type UTXOSet, createUtxoSet } from "./model.utxo-set";
 import { type NodeStore, createNodeStore } from "./store.nodes";
+import { type MineBtcSystem, createMineBtcSystem } from "./system.mine-btc";
 import { type TxMessageSystem, createTxMessageSystem } from "./system.move-tx";
 import {
    type ConnectionSystem,
@@ -12,7 +14,7 @@ import {
 } from "./system.node-connection";
 import { setupNodeFocus } from "./system.node-focus";
 import { type SendRandTxSystem, createSendTxSystem } from "./system.send-txs";
-import type { Block } from "./types";
+import type { BtcBlock } from "./types";
 import { createBackground } from "./ui.background";
 import { createDataWidget } from "./ui.block-data";
 import { createLoadingOverlay } from "./ui.loading-overlay";
@@ -84,6 +86,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
    let systemSendTx: SendRandTxSystem | undefined;
    let store: NodeStore | undefined;
    let utxoSet: UTXOSet | undefined;
+   let mineBtcSystem: MineBtcSystem | undefined;
    const camera = createCamera(app, game);
 
    return {
@@ -98,6 +101,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
          store = createNodeStore(gameVars);
          utxoSet = createUtxoSet(store);
          nodeCountUI = createNodeCounterUI(app);
+         mineBtcSystem = createMineBtcSystem({ store, utxoSet });
          createLoadingOverlay(app);
          systemNodeConnect = createNodeConnectionSystem({ gameVars, store });
          systemMoveTx = createTxMessageSystem(gameVars);
@@ -109,6 +113,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
             systemMoveTx,
             nodeCountUI,
             camera,
+            utxoSet,
          });
          createDataWidget({
             game: game,
@@ -131,7 +136,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
          setTimeout(() => {
             if (!store) return;
             const index = 0;
-            const node = store.activeData()[index].anim;
+            const node = store.activeNodes()[index].anim;
             const e = {} as PIXI.FederatedPointerEvent;
             // node.emit("pointerdown", e);
          }, 1750);
@@ -141,6 +146,7 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
          nodeCountUI?.update(tick);
          systemSendTx?.update(tick);
          systemMoveTx?.update(tick);
+         mineBtcSystem?.update(tick);
       },
    };
 };
@@ -152,6 +158,7 @@ const createBusListeningEvents = (props: {
    systemNodeConnect?: ConnectionSystem;
    systemMoveTx?: TxMessageSystem;
    nodeCountUI?: NodeCounterUI;
+   utxoSet: UTXOSet;
 }) => {
    const { gameVars, store, camera } = props;
    const { systemNodeConnect, nodeCountUI, systemMoveTx } = props;
@@ -179,7 +186,7 @@ const createBusListeningEvents = (props: {
 
    bus.on("randSend", (e) => {
       try {
-         const allNodes = store.activeData();
+         const allNodes = store.activeNodes();
          const recNode = allNodes.find((n) => n.ip() === e.toId);
          const senderNode = allNodes.find((n) => n.ip() === e.fromId);
 
@@ -208,15 +215,35 @@ const createBusListeningEvents = (props: {
    });
 
    bus.on("newTx", (e) => {
-      const originNode = store.activeData().find((n) => n.ip() === e.originId);
+      const originNode = store.activeNodes().find((n) => n.ip() === e.originId);
       if (!originNode) return;
       const connectingNodes = originNode.connections().getAll();
       connectingNodes.map((n) => {
-         if (!n.receiveTx(e.tx)) return;
-         systemMoveTx?.displayMovement({
+         if (!n.mempool.add(e.tx)) return;
+         systemMoveTx?.displayTxMovement({
             fromNode: originNode,
             toNode: n,
-            txMsg: e.tx,
+            tx: e.tx,
+         });
+      });
+   });
+
+   bus.on("fwdBlock", (e) => {
+      const { block, fromAddr } = e;
+      const activeNodes = store.activeNodes();
+      const fromNode = (n: BtcNode) => n.wallet.addr() === fromAddr;
+      const senderNode = activeNodes.find(fromNode);
+      if (!senderNode) {
+         console.error("couldnt find senderNode node for ", block);
+         return;
+      }
+      const connectingNodes = senderNode.connections().getAll();
+      connectingNodes.map((n) => {
+         if (!n.addBlock(block)) return;
+         systemMoveTx?.displayBlockMovement({
+            fromNode: senderNode,
+            toNode: n,
+            block: block,
          });
       });
    });
@@ -229,38 +256,41 @@ interface InitBtcProps {
 
 const initMineBtc = async (props: InitBtcProps): Promise<void> => {
    const { store, utxoSet } = props;
-   const firstNode = store.activeData()[0];
+   const firstNode = store.activeNodes()[0];
    const allNodes = store.allData();
 
    await sleep(0);
    {
-      const emptyBlock = firstNode.blockchain.createEmptyBlock([]);
-      firstNode.miner.setNextBlockToMine(emptyBlock);
-      let genesisBlock: Block | undefined;
+      const block = firstNode.blockchain.createEmptyBlock({ txs: [] });
+      firstNode.miner.setNextBlockToMine(block);
+      let genesisBlock: BtcBlock | undefined;
       do {
          genesisBlock = firstNode.miner.minGenesisBlock();
       } while (!genesisBlock);
-      firstNode.blockchain.addBlock(genesisBlock);
+      firstNode.addBlock(genesisBlock);
       utxoSet.handleNewlyMinedBlock(genesisBlock);
       for (const n of allNodes) {
-         n.blockchain.addBlock(genesisBlock);
+         n.addBlock(genesisBlock);
       }
    }
 
    const mineBlock = async (nodeIdx: number) => {
       const nextNode = allNodes[nodeIdx];
-      const mempoolTxs = nextNode.mempool.getAllTxs();
-      const emptyBlock = nextNode.blockchain.createEmptyBlock(mempoolTxs);
-      nextNode.miner.setNextBlockToMine(emptyBlock);
-      let nextBlock: Block | undefined;
-      do {
-         nextBlock = nextNode.miner.mineNextBlock(emptyBlock);
-      } while (!nextBlock);
-      nextNode.blockchain.addBlock(nextBlock);
-      utxoSet.handleNewlyMinedBlock(nextBlock);
+      const txs = nextNode.mempool.getAllTxs();
+      const block = nextNode.blockchain.createEmptyBlock({ txs });
+      nextNode.miner.setNextBlockToMine(block);
+      let nextBlock: BtcBlock | undefined;
+      let counter = 0;
       await sleep(0);
+      do {
+         counter++;
+         if (counter % 5 === 1) await sleep(0);
+         nextBlock = nextNode.miner.mineNextBlock(block);
+      } while (!nextBlock);
+      nextNode.addBlock(nextBlock);
+      utxoSet.handleNewlyMinedBlock(nextBlock);
       for (let i = 0; i < allNodes.length; i++) {
-         allNodes[i].blockchain.addBlock(nextBlock);
+         allNodes[i].addBlock(nextBlock);
       }
    };
 
@@ -272,22 +302,12 @@ const initMineBtc = async (props: InitBtcProps): Promise<void> => {
       const data = { units: 50, to: 150 };
       const tx = outNode.wallet.splitUTXOs(data);
       for (const inNode of allNodes) {
-         // TOOD: recieve should be on the wallet, I think...
-         inNode.receiveTx(tx);
+         inNode.mempool.add(tx);
       }
    }
 
    const randIdx = randNum({ min: 0, max: 126 });
    await mineBlock(randIdx);
-
-   for (const n of store.allData()) {
-      const bal = n.wallet.balance();
-      console.log(
-         `${n.wallet.addr().slice(0, 10)}...:${bal}`,
-         "utxo count:",
-         n.wallet.utxos().length,
-      );
-   }
 
    bus.fire("gameLoaded", true);
 };

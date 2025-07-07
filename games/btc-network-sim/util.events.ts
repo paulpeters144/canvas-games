@@ -1,4 +1,4 @@
-import type { BlockTx } from "./types";
+import type { BlockTx, BtcBlock } from "./types";
 
 export type EventMap = {
    node: { count: number };
@@ -8,4 +8,5 @@ export type EventMap = {
    wheel: "down" | "up";
    focusNode: { isFocused: true; ip: string } | { isFocused: false };
    gameLoaded: boolean;
+   fwdBlock: { block: BtcBlock; fromAddr: string };
 };

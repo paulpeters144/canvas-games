@@ -1,18 +1,18 @@
-import type { Block, BlockTx, UTXO } from "./types";
-import { standard, validate } from "./util";
+import type { BlockTx, BtcBlock, UTXO } from "./types";
+import { standard } from "./util";
 
 export interface Blockchain {
-   addBlock: (block: Block) => boolean;
-   createEmptyBlock: (txs: BlockTx[]) => Block;
-   getUtxoRewardFrom: (b: Block) => UTXO[];
-   blocks: () => Block[];
+   addBlock: (block: BtcBlock) => boolean;
+   createEmptyBlock: (props: { txs: BlockTx[]; difficulty?: number }) => BtcBlock;
+   getUtxoRewardFrom: (b: BtcBlock) => UTXO[];
+   blocks: () => BtcBlock[];
 }
 
 export const createBlockchain = (): Blockchain => {
-   const blocks: Block[] = [];
+   const blocks: BtcBlock[] = [];
    const blockHashSet = new Set<string>();
 
-   const addBlock = (block: Block): boolean => {
+   const addBlock = (block: BtcBlock): boolean => {
       if (blockHashSet.has(block.hash)) return false;
 
       // skipping this portion because it takes up too much computer for handling up to 127 nodes
@@ -26,47 +26,56 @@ export const createBlockchain = (): Blockchain => {
       //    }
       // }
 
-      if (!validate.headerOf(block)) return false;
-      if (blocks.length === 0) {
-         blocks.push(block);
-         return true;
-      }
+      // if (!validate.headerOf(block)) return false;
 
-      const prevHash = blocks[blocks.length - 1].hash;
-      if (prevHash === block.header.previousBlockHash) {
-         blockHashSet.add(block.hash);
-         blocks.push(block);
-         return true;
-      }
+      // if (blocks.length === 0) {
+      //    blocks.push(block);
+      //    blockHashSet.add(block.hash);
+      //    return true;
+      // }
 
-      return false;
+      // const prevHash = blocks[blocks.length - 1].hash;
+      // if (prevHash === block.header.previousBlockHash) {
+      //    blockHashSet.add(block.hash);
+      //    blocks.push(block);
+      //    return true;
+      // }
+
+      // return false;
+      blockHashSet.add(block.hash);
+      blocks.push(block);
+      return true;
    };
 
-   const createEmptyBlock = (txs: BlockTx[]) => {
+   const createEmptyBlock = (props: { txs: BlockTx[]; difficulty?: number }) => {
+      const { txs, difficulty = 1 } = props;
       const bLen = blocks.length;
       const lastBlock = bLen > 0 ? blocks[bLen - 1] : undefined;
-      const txHashes = txs.map((t) => t.hash);
-      const b: Block = {
+
+      const b: BtcBlock = {
          hash: "",
          height: 0,
          header: {
             previousBlockHash: lastBlock?.hash || "",
-            merkleRoot: standard.getMerkleRoot(txHashes),
+            merkleRoot: "",
             timestamp: 0,
             nonce: 0,
          },
          transactionCount: 0,
-         difficulty: 2,
+         difficulty: difficulty,
          confirmations: 0,
          rewardAmount: "50.00000000",
-         rewardFees: "0",
+         rewardFees: txs
+            .map((t) => Number.parseFloat(t.fee))
+            .reduce((a, c) => a + c, 0)
+            .toFixed(8),
          minerRewardAddress: "",
          transactions: txs,
       };
       return b;
    };
 
-   const getUtxoRewardFrom = (b: Block): UTXO[] => {
+   const getUtxoRewardFrom = (b: BtcBlock): UTXO[] => {
       const mineReward = {
          id: standard.idStr(),
          value: b.rewardAmount,

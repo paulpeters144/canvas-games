@@ -1,19 +1,21 @@
 import type { BtcWallet } from "./model.wallet";
-import type { Block } from "./types";
+import type { BtcBlock } from "./types";
 import { standard } from "./util";
 
 export const createMiner = (wallet: BtcWallet): BtcMiner => {
-   let nextBlockToMine: Block | undefined;
+   let nextBlockToMine: BtcBlock | undefined;
    let merkRoot = "";
    let nonce = 0;
-   const setNextBlockToMine = (b: Block) => {
+   const setNextBlockToMine = (b: BtcBlock) => {
       nextBlockToMine = b;
+      nextBlockToMine.transactionCount = b.transactions.length;
       const txHashes = b.transactions.map((t) => t.hash);
       merkRoot = standard.getMerkleRoot(txHashes);
+      b.transactionCount = b.transactions.length;
       nonce = 0;
    };
 
-   const mineNextBlock = (b: Block): Block | undefined => {
+   const mineNextBlock = (b: BtcBlock): BtcBlock | undefined => {
       if (!nextBlockToMine) {
          const err = "cannot mine without a block set";
          throw new Error(err);
@@ -40,7 +42,7 @@ export const createMiner = (wallet: BtcWallet): BtcMiner => {
       return undefined;
    };
 
-   const minGenesisBlock = (): Block | undefined => {
+   const minGenesisBlock = (): BtcBlock | undefined => {
       if (!nextBlockToMine) {
          const err = "cannot mine without a block set";
          throw new Error(err);
@@ -77,7 +79,7 @@ export const createMiner = (wallet: BtcWallet): BtcMiner => {
 };
 
 export interface BtcMiner {
-   setNextBlockToMine: (b: Block) => void;
-   mineNextBlock: (b: Block) => Block | undefined;
-   minGenesisBlock: () => Block | undefined;
+   setNextBlockToMine: (b: BtcBlock) => void;
+   mineNextBlock: (b: BtcBlock) => BtcBlock | undefined;
+   minGenesisBlock: () => BtcBlock | undefined;
 }

@@ -2,7 +2,7 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 import { sha256 } from "@noble/hashes/sha2";
 import { bytesToHex } from "@noble/hashes/utils";
 import { hexToBytes } from "@noble/hashes/utils";
-import type { Block, BlockTx } from "./types";
+import type { BlockTx, BtcBlock } from "./types";
 
 export const standard = {
    idStr: () => crypto.randomUUID().replaceAll("-", "").slice(0, 25),
@@ -33,7 +33,7 @@ export const standard = {
       }
       return standard.getMerkleRoot(nextHashesArr);
    },
-   hashBlock: (b: Block) => {
+   hashBlock: (b: BtcBlock) => {
       const prevHash = b.header.previousBlockHash;
       const merkRoot = b.header.merkleRoot;
       const time = b.header.timestamp;
@@ -107,7 +107,7 @@ export const validate = {
       const validatedHash = standard.hash(txData);
       return tx.hash === validatedHash;
    },
-   headerOf: (block: Block) => {
+   headerOf: (block: BtcBlock) => {
       const txHashes = block.transactions.map((t) => t.hash);
       const validatedMerkleRoot = standard.getMerkleRoot(txHashes);
       if (validatedMerkleRoot !== block.header.merkleRoot) return false;

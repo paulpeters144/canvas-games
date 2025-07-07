@@ -1,17 +1,20 @@
 import type { NodeStore } from "./store.nodes";
-import type { Block, UTXO } from "./types";
+import type { BtcBlock, UTXO } from "./types";
 import { standard } from "./util";
 
 export interface UTXOSet {
    data: () => UTXO[];
-   handleNewlyMinedBlock: (b: Block) => void;
+   usedUTXOs: () => Set<string>;
+   handleNewlyMinedBlock: (b: BtcBlock) => void;
 }
 
 export const createUtxoSet = (store: NodeStore): UTXOSet => {
    let globalSet: UTXO[] = [];
-   const handleNewlyMinedBlock = (b: Block) => {
+   const usedUTXOs = new Set<string>();
+   const handleNewlyMinedBlock = (b: BtcBlock) => {
       for (const tx of b.transactions) {
          const inputIds = new Set(tx.inputs.map((i) => i.id));
+         tx.inputs.map((i) => usedUTXOs.add(i.id));
          globalSet = globalSet.filter((u) => !inputIds.has(u.id));
          globalSet.push(...tx.outputs);
       }
@@ -42,6 +45,7 @@ export const createUtxoSet = (store: NodeStore): UTXOSet => {
 
    return {
       data: () => globalSet,
+      usedUTXOs: () => usedUTXOs,
       handleNewlyMinedBlock,
    };
 };

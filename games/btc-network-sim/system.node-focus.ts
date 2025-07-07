@@ -30,7 +30,7 @@ export const setupNodeFocus = (props: {
       LAST_POS = camera.centerPos();
       LAST_ZOOM_PERCENT = camera.zoomPercent();
 
-      store.activeData().map((n) => {
+      store.activeNodes().map((n) => {
          n.anim.interactive = false;
          if (n.ip() !== NODE_FOCUSED) n.anim.alpha = 0.5;
       });
@@ -64,7 +64,7 @@ export const setupNodeFocus = (props: {
       camera.enableDrag(true);
       camera.enableZoom(true);
 
-      store.activeData().map((n) => {
+      store.activeNodes().map((n) => {
          n.anim.interactive = true;
          n.anim.alpha = 1;
          n.anim.filters = [];

@@ -14,8 +14,13 @@ interface props {
 export const createSendTxSystem = (props: props): SendRandTxSystem => {
    const { store } = props;
 
-   const getRandIdxs = () => {
-      const allNodes = store.activeData();
+   let gameLoaded = false;
+   bus.on("gameLoaded", () => {
+      gameLoaded = true;
+   });
+
+   const getRandIdx = () => {
+      const allNodes = store.activeNodes();
       const sendIdx = randNum({
          min: 0,
          max: allNodes.length,
@@ -42,10 +47,10 @@ export const createSendTxSystem = (props: props): SendRandTxSystem => {
 
    const fireRandomTx = () => {
       try {
-         const allNodes = store.activeData();
+         const allNodes = store.activeNodes();
          if (allNodes.length < 2) return;
 
-         const { sendIdx, recIdx } = getRandIdxs();
+         const { sendIdx, recIdx } = getRandIdx();
 
          const randSendingNode = allNodes[sendIdx];
          const randReceivingNode = allNodes[recIdx];
@@ -66,7 +71,7 @@ export const createSendTxSystem = (props: props): SendRandTxSystem => {
    };
 
    const createTxInterval = (() => {
-      let eventInterval = randNum({ min: 2500, max: 3000 });
+      let eventInterval = randNum({ min: 1000, max: 1500 });
       let currentTick = 0;
       return {
          update: (t: PIXI.Ticker) => {
@@ -82,6 +87,7 @@ export const createSendTxSystem = (props: props): SendRandTxSystem => {
 
    return {
       update: (tick: PIXI.Ticker) => {
+         if (!gameLoaded) return;
          createTxInterval.update(tick);
       },
    };
