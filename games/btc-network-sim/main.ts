@@ -57,7 +57,6 @@ export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
       e.deltaY > 0 ? bus.fire("wheel", "down") : bus.fire("wheel", "up");
    };
    window.addEventListener("wheel", wheelEventListener, { passive: false });
-
    return {
       next: async (nextScene: () => IScene) => {
          game.removeChildren();
@@ -261,7 +260,10 @@ const initMineBtc = async (props: InitBtcProps): Promise<void> => {
 
    await sleep(0);
    {
-      const block = firstNode.blockchain.createEmptyBlock({ txs: [] });
+      const block = firstNode.blockchain.createEmptyBlock({
+         txs: [],
+         difficulty: 0,
+      });
       firstNode.miner.setNextBlockToMine(block);
       let genesisBlock: BtcBlock | undefined;
       do {
@@ -277,7 +279,10 @@ const initMineBtc = async (props: InitBtcProps): Promise<void> => {
    const mineBlock = async (nodeIdx: number) => {
       const nextNode = allNodes[nodeIdx];
       const txs = nextNode.mempool.getAllTxs();
-      const block = nextNode.blockchain.createEmptyBlock({ txs });
+      const block = nextNode.blockchain.createEmptyBlock({
+         txs: txs,
+         difficulty: 0,
+      });
       nextNode.miner.setNextBlockToMine(block);
       let nextBlock: BtcBlock | undefined;
       let counter = 0;

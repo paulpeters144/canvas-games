@@ -102,7 +102,7 @@ test("test mining blocks", () => {
    const miner = createMiner(wallet1);
    const blockChain = createBlockchain();
 
-   miner.setNextBlockToMine(blockChain.createEmptyBlock([]));
+   miner.setNextBlockToMine(blockChain.createEmptyBlock({ txs: [] }));
    let gBlock: BtcBlock | undefined;
    do {
       gBlock = miner.minGenesisBlock();
@@ -111,7 +111,7 @@ test("test mining blocks", () => {
 
    blockChain.addBlock(gBlock);
 
-   miner.setNextBlockToMine(blockChain.createEmptyBlock([]));
+   miner.setNextBlockToMine(blockChain.createEmptyBlock({ txs: [] }));
    let nextBlock: BtcBlock | undefined;
    do {
       nextBlock = miner.minGenesisBlock();

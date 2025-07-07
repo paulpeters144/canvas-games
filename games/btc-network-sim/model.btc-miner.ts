@@ -27,6 +27,16 @@ export const createMiner = (wallet: BtcWallet): BtcMiner => {
       nonce++;
       const hash = standard.hash(`${prevHash}${merkRoot}${time}${nonce}`);
 
+      if (b.difficulty < 1) {
+         b.minerRewardAddress = wallet.addr();
+         b.header.merkleRoot = merkRoot;
+         b.hash = hash;
+         b.header.previousBlockHash = prevHash;
+         b.header.timestamp = time;
+         b.header.nonce = nonce;
+         return b;
+      }
+
       const difficulty = "0".repeat(b.difficulty);
 
       if (hash.startsWith(difficulty)) {
@@ -55,6 +65,16 @@ export const createMiner = (wallet: BtcWallet): BtcMiner => {
       const time = new Date().getTime();
       nonce++;
       const hash = standard.hash(`${merkRoot}${time}${nonce}`);
+
+      if (b.difficulty < 1) {
+         b.minerRewardAddress = wallet.addr();
+         b.header.merkleRoot = merkRoot;
+         b.hash = hash;
+         b.header.previousBlockHash = prevHash;
+         b.header.timestamp = time;
+         b.header.nonce = nonce;
+         return b;
+      }
 
       const difficulty = "0".repeat(b.difficulty);
 
