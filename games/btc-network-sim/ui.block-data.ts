@@ -443,7 +443,10 @@ const createStringData = (store: NodeStore) => {
    const walletData = () => {
       if (walletStrData) return walletStrData;
       const wallet = focusNode.wallet;
-      const data = { balance: wallet.balance(), utxos: wallet.utxos() };
+      const data = {
+         balance: wallet.balance(),
+         address: wallet.addr(),
+      };
       const json = JSON.stringify(data, null, 2);
       const normJson = normalizeJsonStr(json);
       walletStrData = normJson;
@@ -462,7 +465,7 @@ const createStringData = (store: NodeStore) => {
    const blockchainData = () => {
       if (blockchainStrData) return blockchainStrData;
       const data = focusNode.blockchain.getBlockData({ type: "head" });
-      const json = JSON.stringify(data, null, 2);
+      const json = JSON.stringify(data.block, null, 2);
       const normJson = normalizeJsonStr(json);
       blockchainStrData = normJson;
       return blockchainStrData;
