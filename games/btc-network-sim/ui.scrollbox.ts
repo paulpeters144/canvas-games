@@ -21,7 +21,7 @@ export const createScrollBox = (props: {
    };
 
    const lineCount = defaultText?.split("\n").length || 0;
-   const resolution = lineCount > 500 ? 3.5 : 5;
+   const resolution = lineCount > 500 ? 3.5 : 6;
 
    const titleText = new PIXI.Text({
       style: new PIXI.TextStyle({

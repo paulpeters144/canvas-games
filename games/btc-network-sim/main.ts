@@ -300,13 +300,11 @@ const initMineBtc = async (props: InitBtcProps): Promise<void> => {
 
    for (let i = 1; i < allNodes.length; i++) {
       await mineBlock(i);
-   }
 
-   for (const outNode of allNodes) {
-      const data = { units: 50, to: 150 };
-      const tx = outNode.wallet.splitUTXOs(data);
-      for (const inNode of allNodes) {
-         inNode.mempool.add(tx);
+      const data = { units: 50, to: 25 };
+      if (i !== 0) {
+         const tx = allNodes[i - 1].wallet.splitUTXOs(data);
+         for (const inNode of allNodes) inNode.mempool.add(tx);
       }
    }
 
