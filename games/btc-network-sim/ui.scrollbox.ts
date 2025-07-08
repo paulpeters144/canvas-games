@@ -20,6 +20,9 @@ export const createScrollBox = (props: {
       mouseHovering = false;
    };
 
+   const lineCount = defaultText?.split("\n").length || 0;
+   const resolution = lineCount > 500 ? 3.5 : 5;
+
    const titleText = new PIXI.Text({
       style: new PIXI.TextStyle({
          fontSize: fontSize * 1.75,
@@ -28,7 +31,7 @@ export const createScrollBox = (props: {
          fill: color.white,
       }),
       text: title,
-      resolution: 7,
+      resolution: resolution,
    });
 
    const scrollMaskCtr = new PIXI.Container();
@@ -42,7 +45,7 @@ export const createScrollBox = (props: {
          wordWrapWidth: width,
       }),
       text: defaultText?.trim(),
-      resolution: 7,
+      resolution: resolution,
    });
    scrollMaskCtr.addChild(bodyText);
 

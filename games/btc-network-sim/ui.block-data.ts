@@ -431,7 +431,7 @@ const createStringData = (store: NodeStore) => {
          } else {
             lines.push(line);
          }
-         if (i === 65) {
+         if (i === 800) {
             lines.push("...");
             break;
          }

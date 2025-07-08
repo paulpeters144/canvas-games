@@ -12,7 +12,7 @@ export const assetNames = [
    "ms-grabbing",
    "ms-grab",
    "ms-pointer",
-   "server-anim-coin",
+   "server-anim-coin-2",
    "server-off",
 ] as const;
 export type AssetName = (typeof assetNames)[number];

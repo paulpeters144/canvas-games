@@ -30,10 +30,10 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
 
    const width = 37;
    const height = 43;
-   const frames = 5;
-   const scale = 1;
+   const frames = 10;
+   const scale = 1.01;
 
-   const texture = assets.getTexture("server-anim-coin");
+   const texture = assets.getTexture("server-anim-coin-2");
 
    let buffer = 0;
    const textures = Array.from({ length: frames }, (_, i) => {
@@ -48,7 +48,7 @@ export const createBtcNode = (props: BtcNodeProps): BtcNode => {
 
    const anim = new PIXI.AnimatedSprite({ textures });
    anim.scale.set(scale);
-   anim.animationSpeed = 0.07;
+   anim.animationSpeed = 0.15;
    anim.play();
    anim.currentFrame = randNum({ min: 0, max: frames - 1 });
    anim.zIndex = ZLayer.mid;
