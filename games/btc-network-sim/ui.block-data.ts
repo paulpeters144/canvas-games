@@ -3,24 +3,21 @@ import { ZLayer } from "./game.enums";
 import { bus } from "./main";
 import type { BtcNode } from "./model.btc-node";
 import type { NodeStore } from "./store.nodes";
+import { NODE_FOCUSED } from "./system.node-focus";
 import { color } from "./ui.colors";
-import {
-   BLOCK_SAMPLE,
-   BTC_WALLET_SAMPLE,
-   MEMPOOL_SAMPLE,
-   createScrollBox,
-} from "./ui.scrollbox";
+import { createScrollBox } from "./ui.scrollbox";
 import type { Camera } from "./util.camera";
 
 export const createDataWidget = (props: {
    camera: Camera;
+   app: PIXI.Application;
    game: PIXI.Container;
    store: NodeStore;
    pixelSize: number;
    width: number;
    height: number;
 }) => {
-   const { camera, game, store, pixelSize: pSize, width, height } = props;
+   const { camera, app, game, store, pixelSize: pSize, width, height } = props;
 
    const ctr = new PIXI.Container();
 
@@ -87,13 +84,29 @@ export const createDataWidget = (props: {
       text.updatePosBasedOn(pixelGraphic);
    };
    tabButtons.event.onBlockchainTab(() => {
-      newScrollBox("Blockchain", BLOCK_SAMPLE);
+      const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
+      if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
+      const data = focusNode.blockchain.getBlockData();
+      const json = JSON.stringify(data, null, 2);
+      const normJson = normalizeJsonStr(json);
+      newScrollBox("Blockchain", normJson);
    });
    tabButtons.event.onMempoolTab(() => {
-      newScrollBox("Mempool", MEMPOOL_SAMPLE);
+      const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
+      if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
+      const data = focusNode.mempool.getAllTxs();
+      const json = JSON.stringify(data, null, 2);
+      const normJson = normalizeJsonStr(json);
+      newScrollBox("Mempool", normJson);
    });
    tabButtons.event.onWalletTab(() => {
-      newScrollBox("Wallet", BTC_WALLET_SAMPLE);
+      const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
+      if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
+      const wallet = focusNode.wallet;
+      const data = { balance: wallet.balance(), utxos: wallet.utxos() };
+      const json = JSON.stringify(data, null, 2);
+      const normJson = normalizeJsonStr(json);
+      newScrollBox("Wallet", normJson);
    });
 
    bus.on("wheel", (e) => {
@@ -114,7 +127,7 @@ export const createDataWidget = (props: {
       offClickAreaRt,
       tabButtons.ctr,
    );
-   newScrollBox("Blockchain", BLOCK_SAMPLE);
+
    ctr.visible = false;
    ctr.zIndex = ZLayer.top;
 
@@ -225,6 +238,15 @@ export const createDataWidget = (props: {
 
       const node = store.activeNodes().find((n) => n.ip() === e.ip);
       if (!node) return;
+
+      (() => {
+         const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
+         if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
+         const data = focusNode.blockchain.getBlockData();
+         const json = JSON.stringify(data, null, 2);
+         const normJson = normalizeJsonStr(json);
+         newScrollBox("Blockchain", normJson);
+      })();
 
       const isOnFarLeftScreen = game.width - node.anim.x > 250;
       setTimeout(() => {
@@ -400,4 +422,24 @@ const createTabBtn = (props: {
       },
       isFocused: () => isFocused,
    };
+};
+
+export const normalizeJsonStr = (json: string) => {
+   const lines: string[] = [];
+   const jsonLines = json.split("\n");
+   for (let i = 0; i < jsonLines.length; i++) {
+      const line = jsonLines[i];
+      if (line.length > 50) {
+         lines.push(`${line.slice(0, 45)}...`);
+         if (line.endsWith('",')) {
+            lines[i] += '",';
+         } else if (line.endsWith(",")) {
+            lines[i] += ",";
+         }
+      } else {
+         lines.push(line);
+      }
+   }
+   const result = lines.join("\n");
+   return result;
 };

@@ -173,11 +173,22 @@ export const createBlockchain = (): Blockchain => {
       return [mineReward, feeReward];
    };
 
+   const getBlockData = (hash?: string) => {
+      const all = globalBlockchain.blocks();
+      if (!hash) {
+         return all[all.length - 1];
+      }
+      const result = all.find((b) => b.hash === hash);
+      if (!result) throw new Error(`counld not find block: ${hash}`);
+      return result;
+   };
+
    return {
       addBlock,
       createEmptyBlock,
       getUtxoRewardFrom,
       blocks: () => globalBlockchain.blocks(),
+      getBlockData,
    };
 };
 
@@ -186,4 +197,5 @@ export interface Blockchain {
    createEmptyBlock: (props: { txs: BlockTx[]; difficulty?: number }) => BtcBlock;
    getUtxoRewardFrom: (b: BtcBlock) => UTXO[];
    blocks: () => BtcBlock[];
+   getBlockData: (hash?: string) => BtcBlock;
 }
