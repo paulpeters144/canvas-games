@@ -189,7 +189,7 @@ const createNodeCountText = () => {
    ctr.addChild(count);
 
    ctr.y = 4;
-   ctr.x = 2;
+   ctr.x = 3.5;
 
    return {
       ctr,
