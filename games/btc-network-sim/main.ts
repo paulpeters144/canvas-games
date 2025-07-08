@@ -116,7 +116,6 @@ export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => 
          });
          createDataWidget({
             game: game,
-            app,
             camera,
             store: store,
             pixelSize: 2.01,

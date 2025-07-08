@@ -28,7 +28,7 @@ export const createScrollBox = (props: {
          fill: color.white,
       }),
       text: title,
-      resolution: 1,
+      resolution: 7,
    });
 
    const scrollMaskCtr = new PIXI.Container();
@@ -42,7 +42,7 @@ export const createScrollBox = (props: {
          wordWrapWidth: width,
       }),
       text: defaultText?.trim(),
-      resolution: 1,
+      resolution: 7,
    });
    scrollMaskCtr.addChild(bodyText);
 

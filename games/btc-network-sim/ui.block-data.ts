@@ -10,14 +10,13 @@ import type { Camera } from "./util.camera";
 
 export const createDataWidget = (props: {
    camera: Camera;
-   app: PIXI.Application;
    game: PIXI.Container;
    store: NodeStore;
    pixelSize: number;
    width: number;
    height: number;
 }) => {
-   const { camera, app, game, store, pixelSize: pSize, width, height } = props;
+   const { camera, game, store, pixelSize: pSize, width, height } = props;
 
    const ctr = new PIXI.Container();
 
@@ -247,7 +246,8 @@ export const createDataWidget = (props: {
          const normJson = normalizeJsonStr(json);
          newScrollBox("Blockchain", normJson);
       })();
-
+      tabButtons.reset();
+      text.scrollTo(Number.NEGATIVE_INFINITY);
       const isOnFarLeftScreen = game.width - node.anim.x > 250;
       setTimeout(() => {
          isOnFarLeftScreen ? setRightOf(node) : setLeftOf(node);
@@ -317,6 +317,13 @@ const createTabButtons = () => {
          onWalletTab: (cb: () => void) => {
             walletTabCb = cb;
          },
+      },
+      reset: () => {
+         if (blockchainTab.isFocused()) return;
+         blockchainTab.setFocused(true);
+         mempoolTab.setFocused(false);
+         walletTab.setFocused(false);
+         blockchainTabCb?.();
       },
    };
 };
@@ -438,6 +445,10 @@ export const normalizeJsonStr = (json: string) => {
          }
       } else {
          lines.push(line);
+      }
+      if (i === 65) {
+         lines.push("...");
+         break;
       }
    }
    const result = lines.join("\n");
