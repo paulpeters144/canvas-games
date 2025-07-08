@@ -12,6 +12,7 @@ const globalBlockchain = (() => {
    const baseStoreKey = "blockchain";
    let chunkCount = 0;
    const blockHashSet = new Set<string>();
+   const blocksHashArr: string[] = [];
    localStorage.clear();
 
    const _getLastChunkKey = () => {
@@ -57,6 +58,7 @@ const globalBlockchain = (() => {
       const slicedHash = block.hash.slice(0, 20);
       if (blockHashSet.has(slicedHash)) return false;
       blockHashSet.add(slicedHash);
+      blocksHashArr.push(slicedHash);
 
       try {
          const lastChunk = _getChunkData(chunkCount);
@@ -82,6 +84,13 @@ const globalBlockchain = (() => {
    return {
       addBlock,
       blocks: () => getStoredBlocks(),
+      indexOf: (block: BtcBlock) => {
+         for (let i = 0; i < blocksHashArr.length; i++) {
+            const hashPrefix = blocksHashArr[i];
+            if (block.hash.startsWith(hashPrefix)) return i;
+         }
+         return -1;
+      },
    };
 })();
 
@@ -173,14 +182,47 @@ export const createBlockchain = (): Blockchain => {
       return [mineReward, feeReward];
    };
 
-   const getBlockData = (hash?: string) => {
+   const getBlockData = (q: BlockQuery) => {
       const all = globalBlockchain.blocks();
-      if (!hash) {
-         return all[all.length - 1];
+      if (q.type === "head") {
+         const block = all[all.length - 1];
+         const hasPrev = globalBlockchain.indexOf(block) > 0;
+         return { block, hasNext: false, hasPrev };
       }
-      const result = all.find((b) => b.hash === hash);
-      if (!result) throw new Error(`counld not find block: ${hash}`);
-      return result;
+      if (q.type === "exact") {
+         const { hash: h } = q;
+         const block = all.find((b) => b.hash === q.hash);
+         if (!block) throw new Error(`counld not find block: ${h}`);
+         const idxOfBlock = globalBlockchain.indexOf(block);
+         const hasPrev = idxOfBlock > 0;
+         const hasNext = idxOfBlock < all.length - 1;
+         return { block, hasNext, hasPrev };
+      }
+      if (q.type === "prev") {
+         const { hash: h } = q;
+         const childHash =
+            all.find((b) => b.hash === h)?.header.previousBlockHash || "";
+         const block = all.find((b) => b.hash === childHash);
+         if (!block) throw new Error(`counld not find block: ${h}`);
+         const idxOfBlock = globalBlockchain.indexOf(block);
+         const hasPrev = idxOfBlock > 0;
+         const hasNext = idxOfBlock < all.length - 1;
+         return { block, hasNext, hasPrev };
+      }
+      if (q.type === "next") {
+         const { hash: h } = q;
+         const prevBlock = (b: BtcBlock) => b.header.previousBlockHash === h;
+         const prevBlockHash = all.find(prevBlock)?.hash || "";
+         const block = all.find((b) => b.hash === prevBlockHash);
+         if (!block) {
+            throw new Error(`counld not find block: ${h}`);
+         }
+         const idxOfBlock = globalBlockchain.indexOf(block);
+         const hasPrev = idxOfBlock > 0;
+         const hasNext = idxOfBlock < all.length - 1;
+         return { block, hasNext, hasPrev };
+      }
+      throw new Error(`unknown block query ${JSON.stringify(q)}`);
    };
 
    return {
@@ -194,8 +236,32 @@ export const createBlockchain = (): Blockchain => {
 
 export interface Blockchain {
    addBlock: (block: BtcBlock) => boolean;
-   createEmptyBlock: (props: { txs: BlockTx[]; difficulty?: number }) => BtcBlock;
+   createEmptyBlock: (props: {
+      txs: BlockTx[];
+      difficulty?: number;
+   }) => BtcBlock;
    getUtxoRewardFrom: (b: BtcBlock) => UTXO[];
    blocks: () => BtcBlock[];
-   getBlockData: (hash?: string) => BtcBlock;
+   getBlockData: (q: BlockQuery) => {
+      block: BtcBlock;
+      hasNext: boolean;
+      hasPrev: boolean;
+   };
 }
+
+export type BlockQuery =
+   | {
+        type: "head";
+     }
+   | {
+        type: "exact";
+        hash: string;
+     }
+   | {
+        type: "prev";
+        hash: string;
+     }
+   | {
+        type: "next";
+        hash: string;
+     };

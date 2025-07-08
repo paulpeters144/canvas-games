@@ -82,31 +82,6 @@ export const createDataWidget = (props: {
       ctr.addChild(text.ctr);
       text.updatePosBasedOn(pixelGraphic);
    };
-   tabButtons.event.onBlockchainTab(() => {
-      const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
-      if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
-      const data = focusNode.blockchain.getBlockData();
-      const json = JSON.stringify(data, null, 2);
-      const normJson = normalizeJsonStr(json);
-      newScrollBox("Blockchain", normJson);
-   });
-   tabButtons.event.onMempoolTab(() => {
-      const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
-      if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
-      const data = focusNode.mempool.getAllTxs();
-      const json = JSON.stringify(data, null, 2);
-      const normJson = normalizeJsonStr(json);
-      newScrollBox("Mempool", normJson);
-   });
-   tabButtons.event.onWalletTab(() => {
-      const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
-      if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
-      const wallet = focusNode.wallet;
-      const data = { balance: wallet.balance(), utxos: wallet.utxos() };
-      const json = JSON.stringify(data, null, 2);
-      const normJson = normalizeJsonStr(json);
-      newScrollBox("Wallet", normJson);
-   });
 
    bus.on("wheel", (e) => {
       if (!ctr.visible) return;
@@ -234,18 +209,21 @@ export const createDataWidget = (props: {
          ctr.visible = false;
          return;
       }
-
       const node = store.activeNodes().find((n) => n.ip() === e.ip);
       if (!node) return;
 
-      (() => {
-         const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
-         if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
-         const data = focusNode.blockchain.getBlockData();
-         const json = JSON.stringify(data, null, 2);
-         const normJson = normalizeJsonStr(json);
-         newScrollBox("Blockchain", normJson);
-      })();
+      const strData = createStringData(store);
+      tabButtons.event.onBlockchainTab(() => {
+         newScrollBox("Blockchain", strData.blockchainData());
+      });
+      tabButtons.event.onMempoolTab(() => {
+         newScrollBox("Mempool", strData.mempoolData());
+      });
+      tabButtons.event.onWalletTab(() => {
+         newScrollBox("Wallet", strData.walletData());
+      });
+
+      newScrollBox("Blockchain", strData.blockchainData());
       tabButtons.reset();
       text.scrollTo(Number.NEGATIVE_INFINITY);
       const isOnFarLeftScreen = game.width - node.anim.x > 250;
@@ -431,26 +409,73 @@ const createTabBtn = (props: {
    };
 };
 
-export const normalizeJsonStr = (json: string) => {
-   const lines: string[] = [];
-   const jsonLines = json.split("\n");
-   for (let i = 0; i < jsonLines.length; i++) {
-      const line = jsonLines[i];
-      if (line.length > 50) {
-         lines.push(`${line.slice(0, 45)}...`);
-         if (line.endsWith('",')) {
-            lines[i] += '",';
-         } else if (line.endsWith(",")) {
-            lines[i] += ",";
+const createStringData = (store: NodeStore) => {
+   const focusNode = store.activeNodes().find((n) => n.ip() === NODE_FOCUSED);
+   if (!focusNode) throw new Error(`couldn't find node ${NODE_FOCUSED}`);
+   let blockchainStrData = "";
+   let mempoolStrData = "";
+   let walletStrData = "";
+
+   const normalizeJsonStr = (json: string) => {
+      const lines: string[] = [];
+      const jsonLines = json.split("\n");
+      for (let i = 0; i < jsonLines.length; i++) {
+         const line = jsonLines[i];
+         if (line.length > 50) {
+            lines.push(`${line.slice(0, 45)}...`);
+            if (line.endsWith('",')) {
+               lines[i] += '",';
+            } else if (line.endsWith(",")) {
+               lines[i] += ",";
+            }
+         } else {
+            lines.push(line);
          }
-      } else {
-         lines.push(line);
+         if (i === 65) {
+            lines.push("...");
+            break;
+         }
       }
-      if (i === 65) {
-         lines.push("...");
-         break;
-      }
-   }
-   const result = lines.join("\n");
-   return result;
+      const result = lines.join("\n");
+      return result;
+   };
+
+   const walletData = () => {
+      if (walletStrData) return walletStrData;
+      const wallet = focusNode.wallet;
+      const data = { balance: wallet.balance(), utxos: wallet.utxos() };
+      const json = JSON.stringify(data, null, 2);
+      const normJson = normalizeJsonStr(json);
+      walletStrData = normJson;
+      return walletStrData;
+   };
+
+   const mempoolData = () => {
+      if (mempoolStrData) return mempoolStrData;
+      const data = focusNode.mempool.getAllTxs();
+      const json = JSON.stringify(data, null, 2);
+      const normJson = normalizeJsonStr(json);
+      mempoolStrData = normJson;
+      return mempoolStrData;
+   };
+
+   const blockchainData = () => {
+      if (blockchainStrData) return blockchainStrData;
+      const data = focusNode.blockchain.getBlockData({ type: "head" });
+      const json = JSON.stringify(data, null, 2);
+      const normJson = normalizeJsonStr(json);
+      blockchainStrData = normJson;
+      return blockchainStrData;
+   };
+
+   return {
+      walletData,
+      mempoolData,
+      blockchainData,
+      refresh: () => {
+         blockchainStrData = "";
+         mempoolStrData = "";
+         walletStrData = "";
+      },
+   };
 };
