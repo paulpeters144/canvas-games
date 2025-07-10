@@ -26,7 +26,7 @@ const games = [
    {
       id: "bitcoin-sim",
       title: "Bitcoin Network Sim",
-      image: "game-imgs/space-game.png",
+      image: "game-imgs/btc-net-sim/game-img.jpg",
       init: GAME.createBtcNetworkSim,
    },
    {
