@@ -24,11 +24,6 @@ import { randNum, sleep } from "./util";
 import { type Camera, createCamera } from "./util.camera";
 import type { EventMap } from "./util.events";
 
-// TODO: create a loading screen where we mine 3 blocks
-
-// TODO: initialize all node, but just don't make some of them visible
-//       with the left blade ctrls
-
 export const bus = eBus<EventMap>();
 
 export async function createBtcNetworkSim(app: PIXI.Application) {
@@ -51,12 +46,20 @@ export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
    game.zIndex = ZLayer.bottom;
    app.stage.addChild(game);
 
-   // TODO: need to dispose these listeners
    const wheelEventListener = (e: WheelEvent) => {
       e.preventDefault();
       e.deltaY > 0 ? bus.fire("wheel", "down") : bus.fire("wheel", "up");
    };
    window.addEventListener("wheel", wheelEventListener, { passive: false });
+
+   window.addEventListener("gameModal", () => {
+      window.removeEventListener("wheel", wheelEventListener);
+      app.stage.removeAllListeners();
+      app.stage.removeChildren();
+      gameTicker?.destroy();
+      bus.clear();
+   });
+
    return {
       next: async (nextScene: () => IScene) => {
          game.removeChildren();

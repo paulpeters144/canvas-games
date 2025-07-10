@@ -24,8 +24,23 @@ export const bus = eBus<EventMap>();
 export async function createSlitherSlimGame(app: PIXI.Application) {
    const sceneEngine = newSceneEngine(app);
    sceneEngine.next((game, app) => gameScene(game, app));
+}
 
-   window.addEventListener("keydown", (e) => {
+export interface IScene {
+   load: (game: PIXI.ContainerChild) => Promise<void>;
+   update: (tick: PIXI.Ticker) => void;
+}
+
+export const newSceneEngine = (app: PIXI.Application) => {
+   let gameTicker: PIXI.Ticker | undefined;
+   let currentScene: IScene | undefined;
+
+   const game: PIXI.Container = new PIXI.Container();
+   app.stage.addChild(game);
+
+   setTimeout(() => resizeGame(app), 0);
+
+   const handleInput = (e: KeyboardEvent) => {
       switch (e.code) {
          case "ArrowUp":
             bus.fire("keyPressed", "up");
@@ -43,25 +58,21 @@ export async function createSlitherSlimGame(app: PIXI.Application) {
             bus.fire("keyPressed", "enter");
             break;
       }
+   };
+   window.addEventListener("keydown", handleInput);
+
+   window.addEventListener("gameModal", () => {
+      window.removeEventListener("keydown", handleInput);
+      app.stage.removeAllListeners();
+      app.stage.removeChildren();
+      gameTicker?.destroy();
+      bus.clear();
    });
-}
-
-export interface IScene {
-   load: (game: PIXI.ContainerChild) => Promise<void>;
-   update: (tick: PIXI.Ticker) => void;
-}
-
-export const newSceneEngine = (app: PIXI.Application) => {
-   let gameTicker: PIXI.Ticker | undefined;
-   let currentScene: IScene | undefined;
-
-   const game: PIXI.Container = new PIXI.Container();
-   app.stage.addChild(game);
-
-   setTimeout(() => resizeGame(app), 0);
 
    return {
-      next: async (nextScene: (game: PIXI.ContainerChild, app: PIXI.Application) => IScene) => {
+      next: async (
+         nextScene: (game: PIXI.ContainerChild, app: PIXI.Application) => IScene,
+      ) => {
          game.removeChildren();
          game.removeAllListeners();
 
@@ -81,7 +92,10 @@ export const newSceneEngine = (app: PIXI.Application) => {
    };
 };
 
-export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): IScene => {
+export const gameScene = (
+   game: PIXI.ContainerChild,
+   app: PIXI.Application,
+): IScene => {
    let gameTiles: GameTiles | undefined;
    let snake: Snake | undefined;
    let camera: Camera | undefined;
@@ -105,7 +119,11 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
    };
 
    const addRandomApple = () => {
-      const nextApplePos = fromOpenTiles({ gameTiles, snake, apples }).getRandomTile();
+      const nextApplePos = fromOpenTiles({
+         gameTiles,
+         snake,
+         apples,
+      }).getRandomTile();
       const pos = { x: nextApplePos.sprite.x, y: nextApplePos.sprite.y };
       apples?.createApple({ game, pos });
    };
@@ -143,7 +161,11 @@ export const gameScene = (game: PIXI.ContainerChild, app: PIXI.Application): ISc
 
          apples = await loadApples();
 
-         snakeMovement = snakeMovementSystem({ snake, gameTiles, initPos: { row: 5, col: 5 } });
+         snakeMovement = snakeMovementSystem({
+            snake,
+            gameTiles,
+            initPos: { row: 5, col: 5 },
+         });
 
          scoreText.addToApp(app);
 
