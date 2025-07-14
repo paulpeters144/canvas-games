@@ -1,5 +1,5 @@
 import type * as PIXI from "pixi.js";
-import { bus } from "./main";
+import { bus } from "./_main";
 import type { NodeStore } from "./store.nodes";
 import { randNum, standard } from "./util";
 

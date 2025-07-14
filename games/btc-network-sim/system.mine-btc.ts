@@ -1,5 +1,5 @@
 import type * as PIXI from "pixi.js";
-import { bus } from "./main";
+import { bus } from "./_main";
 import type { UTXOSet } from "./model.utxo-set";
 import type { NodeStore } from "./store.nodes";
 import type { BtcBlock } from "./types";

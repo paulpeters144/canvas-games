@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
+import { bus } from "./_main";
 import { ZLayer } from "./game.enums";
-import { bus } from "./main";
 import type { BtcNode } from "./model.btc-node";
 import type { NodeStore } from "./store.nodes";
 import { NODE_FOCUSED } from "./system.node-focus";

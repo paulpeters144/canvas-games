@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { bus } from "./main";
+import { bus } from "./_main";
 import { createBtnGraphic } from "./ui.button";
 import { color } from "./ui.colors";
 import { BtnState } from "./util.input-ctrl";

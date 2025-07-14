@@ -33,7 +33,7 @@ const games = [
       id: "placeholder3",
       title: "Placeholder",
       image: "game-imgs/space-game.png",
-      init: exampleGame,
+      init: GAME.createMario1Dash1Level,
    },
    {
       id: "placeholder4",

@@ -1,8 +1,8 @@
 import { OutlineFilter } from "pixi-filters";
 import * as PIXI from "pixi.js";
+import { bus } from "./_main";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
-import { bus } from "./main";
 import { type Blockchain, createBlockchain } from "./model.blockchain";
 import { type BtcMiner, createMiner } from "./model.btc-miner";
 import { type NodeConnections, createConnections } from "./model.connection";

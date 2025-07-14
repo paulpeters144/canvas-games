@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
+import { bus } from "./_main";
 import { ZLayer } from "./game.enums";
 import type { GameVars } from "./game.vars";
-import { bus } from "./main";
 import type { BtcNode } from "./model.btc-node";
 import type { NodeStore } from "./store.nodes";
 import type { Position } from "./types";

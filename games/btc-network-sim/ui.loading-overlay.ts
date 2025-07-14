@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { bus } from "./main";
+import { bus } from "./_main";
 import { color } from "./ui.colors";
 
 export const createLoadingOverlay = (app: PIXI.Application) => {
