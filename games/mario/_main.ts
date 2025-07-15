@@ -1,9 +1,11 @@
 import { eBus } from "games/util/event-bus";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
-import { createGameAtlas } from "./game.atlas";
+import { createTiledMap, fetchAtlasMetadata } from "./game.atlas";
 import { ZLayer } from "./game.enums";
 import { type GameVars, createGameVars } from "./game.vars";
+import { createInputCtrl } from "./input.control";
+import type { MarioModel } from "./model.mario";
 import type { EventMap } from "./util.events";
 
 export const bus = eBus<EventMap>();
@@ -13,7 +15,7 @@ export async function createMario1Dash1Level(app: PIXI.Application) {
    const assets = createGameAssets();
    const gameVars = createGameVars(game, assets);
    const sceneEngine = newSceneEngine(gameVars, app);
-   sceneEngine.next(() => gameScene(gameVars, app));
+   sceneEngine.next(() => gameScene({ gameVars, app }));
 }
 
 export interface IScene {
@@ -25,7 +27,7 @@ export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
    let gameTicker: PIXI.Ticker | undefined;
    let currentScene: IScene | undefined;
    const { game } = gameVars;
-   game.zIndex = ZLayer.bottom;
+   game.zIndex = ZLayer.btm;
    app.stage.addChild(game);
 
    window.addEventListener("gameModal", () => {
@@ -55,15 +57,38 @@ export const newSceneEngine = (gameVars: GameVars, app: PIXI.Application) => {
    };
 };
 
-export const gameScene = (gameVars: GameVars, app: PIXI.Application): IScene => {
+interface GameSceneProps {
+   gameVars: GameVars;
+   app: PIXI.Application;
+}
+export const gameScene = (props: GameSceneProps): IScene => {
+   const { gameVars, app } = props;
    const { game, assets } = gameVars;
+   let mario: MarioModel | undefined;
+   const inputCtrl = createInputCtrl();
 
    return {
       load: async () => {
          await assets.load();
-         await createGameAtlas(assets);
+         const jsonMetaData = await fetchAtlasMetadata();
+         const atlasTexture = assets.getTexture("mario-atlas.png");
+         const tiledMap = createTiledMap({
+            json: jsonMetaData,
+            atlas: atlasTexture,
+         });
+         game.addChild(tiledMap.ctr);
+
+         const resize = () => {
+            const diff = app.screen.height / tiledMap.ctr.height;
+            app.stage.scale.set(diff);
+         };
+         setTimeout(resize, 250);
+
+         window.addEventListener("resize", resize);
       },
 
-      update: (tick: PIXI.Ticker) => {},
+      update: (tick: PIXI.Ticker) => {
+         mario?.update(tick);
+      },
    };
 };

@@ -3,16 +3,18 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "mario-map-1-1.tmx",
     "expandedProjectPaths": [
+        "."
     ],
+    "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "mario-map-1-1.json": {
             "scale": 2,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 221.75,
-                "y": 222.25
+                "x": 221.5,
+                "y": 299.75
             }
         },
         "mario-map-1-1.tmj": {
@@ -22,17 +24,33 @@
                 "x": 376.875,
                 "y": 138
             }
+        },
+        "mario-map-1-1.tmx": {
+            "scale": 1,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 1106,
+                "y": 202
+            }
+        },
+        "test.tsx": {
+            "scaleInDock": 1
         }
     },
+    "last.exportedFilePath": "C:/Users/paulp/source/repos/canvas-games/public/game-imgs/mario",
     "last.imagePath": "C:/Users/paulp/OneDrive/Desktop",
     "map.height": 20,
+    "map.lastUsedExportFilter": "All Files (*)",
     "map.lastUsedFormat": "json",
     "map.tileHeight": 16,
     "map.tileWidth": 16,
     "openFiles": [
+        "mario-map-1-1.tmx"
     ],
     "project": "mario-project.tiled-project",
+    "property.type": "bool",
     "recentFiles": [
+        "mario-map-1-1.tmx",
         "mario-map-1-1.json",
         "mario-map-1-1.tmj"
     ],
