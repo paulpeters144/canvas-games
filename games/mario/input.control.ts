@@ -74,11 +74,17 @@ const buttonNames = [
    "ArrowLeft",
    "ArrowRight",
    "Escape",
+   "z",
 ] as const;
 
 type ButtonName = (typeof buttonNames)[number];
 
-export const createInputCtrl = () => {
+export interface InputCtrl {
+   destroy: () => void;
+   btn: Record<ButtonName, BtnState>;
+}
+
+export const createInputCtrl = (): InputCtrl => {
    const btnStates: Record<ButtonName, BtnState> = Object.fromEntries(
       buttonNames.map((key) => [key, new BtnState()]),
    ) as Record<ButtonName, BtnState>;

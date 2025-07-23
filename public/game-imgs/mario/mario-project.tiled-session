@@ -26,15 +26,15 @@
             }
         },
         "mario-map-1-1.tmx": {
-            "scale": 1,
-            "selectedLayer": 2,
+            "scale": 1.5,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 1106,
-                "y": 202
+                "x": 372.33333333333337,
+                "y": 27.66666666666663
             }
         },
         "test.tsx": {
-            "scaleInDock": 1
+            "scaleInDock": 1.5
         }
     },
     "last.exportedFilePath": "C:/Users/paulp/source/repos/canvas-games/public/game-imgs/mario",

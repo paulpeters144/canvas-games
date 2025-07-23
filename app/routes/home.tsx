@@ -272,6 +272,7 @@ export function GameModal({ createGame, onClose }: GameModalProps) {
       } else {
          document.exitFullscreen();
       }
+      window.dispatchEvent(new CustomEvent("resize"));
    };
 
    const { isFullscreen } = useGameIsFullScreen();
