@@ -1,13 +1,13 @@
 import { eBus } from "games/util/event-bus";
+import { CRTFilter } from "pixi-filters/crt";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
 import { createTiledMap, fetchAtlasMetadata } from "./game.atlas";
 import { ZLayer } from "./game.enums";
 import { type GameVars, createGameVars } from "./game.vars";
 import { createInputCtrl } from "./input.control";
-import { EntityModel } from "./model.entity";
-import { SystemGravity } from "./system/system.gravity";
-import { SystemJump } from "./system/system.jump";
+import { MarioModel } from "./model.mario";
+import { SystemMarioMove } from "./system.mario.move/system.mario.move";
 import type { EventMap } from "./util.events";
 
 export const bus = eBus<EventMap>();
@@ -68,26 +68,25 @@ export const gameScene = (props: GameSceneProps): IScene => {
    const { game, assets } = gameVars;
 
    const inputCtrl = createInputCtrl();
-   const systemGravity = new SystemGravity();
-   const systemJump = new SystemJump({ inputCtrl });
+   const systemMove = new SystemMarioMove({ inputCtrl });
 
-   // const crtFilter = new CRTFilter({
-   //    curvature: 1.0,
-   //    lineWidth: 1.3,
-   //    lineContrast: 0.2,
-   //    verticalLine: false,
-   //    noiseSize: 0.1,
-   //    noise: 0.1,
-   //    vignetting: 0.4,
-   //    vignettingAlpha: 0.15,
-   //    vignettingBlur: 0.3,
-   //    seed: 0.0,
-   //    time: 0.5,
-   // });
+   const crtFilter = new CRTFilter({
+      curvature: 1.0,
+      lineWidth: 1.3,
+      lineContrast: 0.2,
+      verticalLine: false,
+      noiseSize: 0.1,
+      noise: 0.1,
+      vignetting: 0.4,
+      vignettingAlpha: 0.15,
+      vignettingBlur: 0.3,
+      seed: 0.0,
+      time: 0.5,
+   });
 
-   // game.filters = [crtFilter];
+   game.filters = [crtFilter];
 
-   let mario: EntityModel | undefined;
+   let mario: MarioModel | undefined;
 
    const objects: PIXI.Rectangle[] = [];
 
@@ -103,7 +102,7 @@ export const gameScene = (props: GameSceneProps): IScene => {
          game.addChild(tiledMap.ctr);
          objects.push(...tiledMap.objects);
 
-         mario = new EntityModel(assets.getTexture("mario-stand.png"));
+         mario = new MarioModel(assets.getTexture("mario-stand.png"));
          game.addChild(mario.sprite);
 
          const resize = () => {
@@ -118,17 +117,11 @@ export const gameScene = (props: GameSceneProps): IScene => {
       update: (tick: PIXI.Ticker) => {
          if (!mario) return;
 
-         if (inputCtrl.btn.ArrowUp.data.pressed) mario.moveUp();
-         if (inputCtrl.btn.ArrowRight.data.pressed) mario.moveRight();
-         if (inputCtrl.btn.ArrowDown.data.pressed) mario.moveDown();
-         if (inputCtrl.btn.ArrowLeft.data.pressed) mario.moveLeft();
-
          mario.update(tick);
-         // crtFilter.time += 0.5;
-         // crtFilter.seed = Math.random();
+         crtFilter.time += 0.5;
+         crtFilter.seed = Math.random();
 
-         systemGravity.update({ tick, entities: [mario], objects });
-         systemJump.update({ mario });
+         systemMove.update({ tick, mario, objects });
       },
    };
 };
