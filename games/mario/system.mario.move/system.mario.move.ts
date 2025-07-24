@@ -17,19 +17,44 @@ export class SystemMarioMove {
       mario: MarioModel;
       objects: PIXI.Rectangle[];
    }) {
-      this._handleInput(props.mario);
+      this._handleGroundMove(props.mario);
       this._handleMarioJump(props);
       this._handleMarioMove(props);
       this._handleGravity(props);
+      this._handleBlockBumping(props);
    }
 
-   private _handleInput(mario: MarioModel) {
+   private _handleGroundMove(mario: MarioModel) {
       const btn = this._inputCtrl.btn;
+      if (!mario.isOnGround) return;
       if (btn.ArrowRight.data.pressed) {
          mario.nexPos.x = mario.curPos.x + 3;
       }
       if (btn.ArrowLeft.data.pressed) {
          mario.nexPos.x = mario.curPos.x - 3;
+      }
+   }
+
+   private _handleBlockBumping(props: {
+      tick: PIXI.Ticker;
+      mario: MarioModel;
+      objects: PIXI.Rectangle[];
+   }) {
+      const { tick, mario, objects } = props;
+      if (!mario.isJumping) return;
+
+      const marioRect = new PIXI.Rectangle(
+         mario.sprite.x,
+         mario.sprite.y,
+         mario.sprite.width,
+         mario.sprite.height,
+      );
+      for (let i = 0; i < objects.length; i++) {
+         const obj = objects[i];
+         if (!marioRect.intersects(obj)) continue;
+         if (marioRect.top <= obj.bottom) {
+            mario.sprite.y = obj.y + obj.height;
+         }
       }
    }
 
@@ -39,8 +64,7 @@ export class SystemMarioMove {
       objects: PIXI.Rectangle[];
    }) {
       const { tick, mario, objects } = props;
-      const deltaTimeInSeconds = tick.deltaMS / 1000;
-      const dy = 20 * deltaTimeInSeconds;
+      const dy = (tick.deltaMS / 1000) * 20;
       if (mario.isJumping) return;
 
       const { sprite } = mario;
@@ -56,7 +80,7 @@ export class SystemMarioMove {
       mario.isOnGround = false;
 
       for (const obj of objects) {
-         const isAbove = sprite.y - sprite.height <= obj.y;
+         const isAbove = sprite.y - sprite.height <= obj.y - 5;
          const willOverlap = futureBounds.intersects(obj);
 
          if (isAbove && willOverlap) {
@@ -77,12 +101,11 @@ export class SystemMarioMove {
       objects: PIXI.Rectangle[];
    }) {
       const { tick, mario } = props;
-      const deltaTimeInSeconds = tick.deltaMS / 1000;
-      const moveSpeed = 125 * deltaTimeInSeconds;
+      const moveSpeed = 100 * (tick.deltaMS * 0.001);
       if (mario.curPos.y !== mario.nexPos.y) {
          const needsToMoveUp = mario.curPos.y > mario.nexPos.y;
          if (needsToMoveUp) {
-            mario.sprite.y -= moveSpeed * 5;
+            mario.sprite.y -= moveSpeed * 2;
             const overshotPos = mario.curPos.y < mario.nexPos.y;
             if (overshotPos) {
                mario.sprite.y = mario.nexPos.y;
@@ -90,7 +113,7 @@ export class SystemMarioMove {
          }
          const needsToMoveDn = mario.curPos.y < mario.nexPos.y;
          if (needsToMoveDn) {
-            mario.sprite.y += moveSpeed * 5;
+            mario.sprite.y += moveSpeed * 2;
             const overshotPos = mario.curPos.y > mario.nexPos.y;
             if (overshotPos) {
                mario.sprite.y = mario.nexPos.y;
@@ -121,7 +144,7 @@ export class SystemMarioMove {
 
    private _curJumpVal = 0;
    private _startJumpVal = 0;
-   private _maxJumpVal = 100;
+   private _maxJumpVal = 70;
 
    private _handleMarioJump(props: {
       tick: PIXI.Ticker;
@@ -145,7 +168,7 @@ export class SystemMarioMove {
             // Smooth jump using cosine easing
             const t = this._curJumpVal / this._maxJumpVal; // 0 to 1
             const eased = Math.cos(t * (Math.PI / 2)); // 1 to 0
-            const jumpStep = 4 * eased; // Scaled jump step
+            const jumpStep = 2.75 * eased; // Scaled jump step
             mario.nexPos.y = mario.curPos.y - jumpStep;
 
             this._curJumpVal = Math.abs(mario.nexPos.y - this._startJumpVal);
@@ -163,6 +186,43 @@ export class SystemMarioMove {
       ) {
          this._curJumpVal = 0;
          this._startJumpVal = 0;
+      }
+
+      this.marioInTheAir(props);
+   }
+
+   private _movingRight = false;
+   private _curHorzMoveVal = 0.0005;
+   private _defaultHorzMoveVal = 0.0005;
+   private marioInTheAir(props: {
+      tick: PIXI.Ticker;
+      mario: MarioModel;
+      objects: PIXI.Rectangle[];
+   }) {
+      const { tick, mario, objects } = props;
+      if (!mario.isOnGround) {
+         const moveSpeed = tick.deltaMS * 0.1;
+         if (this._inputCtrl.btn.ArrowRight.data.pressed) {
+            if (!this._movingRight) {
+               this._curHorzMoveVal = this._defaultHorzMoveVal;
+            }
+            this._movingRight = true;
+            this._curHorzMoveVal *= moveSpeed;
+            this._curHorzMoveVal = Math.min(this._curHorzMoveVal, 3);
+            mario.nexPos.x = mario.curPos.x + this._curHorzMoveVal;
+         }
+         if (this._inputCtrl.btn.ArrowLeft.data.pressed) {
+            if (this._movingRight) {
+               this._curHorzMoveVal = this._defaultHorzMoveVal;
+            }
+            this._movingRight = false;
+            this._curHorzMoveVal *= moveSpeed;
+            this._curHorzMoveVal = Math.min(this._curHorzMoveVal, 3);
+            mario.nexPos.x = mario.curPos.x - this._curHorzMoveVal;
+         }
+      }
+      if (mario.isOnGround) {
+         this._curHorzMoveVal = this._defaultHorzMoveVal;
       }
    }
 }
