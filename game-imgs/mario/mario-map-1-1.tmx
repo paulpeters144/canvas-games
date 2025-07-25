@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="51" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="13" nextobjectid="51">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="51" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="13" nextobjectid="54">
  <editorsettings>
   <export target="mario-map-1-1.json" format="json"/>
  </editorsettings>
  <tileset firstgid="1" source="test.tsx"/>
- <layer id="2" name="blue-bg" width="51" height="16">
+ <layer id="2" name="blue-bg" width="51" height="16" visible="0">
   <data encoding="csv">
 143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,
 143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,
@@ -24,7 +24,7 @@
 143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143,143
 </data>
  </layer>
- <layer id="1" name="layer-1" width="51" height="16">
+ <layer id="1" name="layer-1" width="51" height="16" visible="0">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -44,7 +44,7 @@
 168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168
 </data>
  </layer>
- <objectgroup id="9" name="obj-pipes">
+ <objectgroup id="9" name="obj-pipes" visible="0">
   <object id="35" x="489.031" y="192" width="31.9688" height="15"/>
   <object id="36" x="491" y="207" width="27.9688" height="16.9375"/>
   <object id="37" x="649" y="175.969" width="31.9688" height="15.0313"/>
@@ -52,16 +52,16 @@
   <object id="39" x="776.978" y="160" width="32.0444" height="15"/>
   <object id="40" x="778.978" y="175" width="28.0222" height="48.9556"/>
  </objectgroup>
- <objectgroup id="10" name="obj-ground">
+ <objectgroup id="10" name="obj-ground" visible="0">
   <object id="42" x="0.0078125" y="224.004" width="815.992" height="31.9961"/>
  </objectgroup>
  <objectgroup id="12" name="obj-q-blocks">
   <object id="47" gid="276" x="288" y="176" width="16" height="16"/>
   <object id="48" gid="276" x="368" y="176" width="16" height="16"/>
   <object id="49" gid="276" x="400" y="176" width="16" height="16"/>
-  <object id="50" gid="276" x="384" y="112" width="16" height="16"/>
+  <object id="53" gid="276" x="384" y="128" width="16" height="16"/>
  </objectgroup>
- <objectgroup id="11" name="obj-brick-blocks">
+ <objectgroup id="11" name="obj-brick-blocks" visible="0">
   <object id="43" gid="232" x="352" y="176" width="16" height="16"/>
   <object id="44" gid="232" x="384" y="176.022" width="16" height="16"/>
   <object id="45" gid="232" x="416.022" y="176.022" width="16" height="16"/>
