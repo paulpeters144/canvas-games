@@ -1,5 +1,6 @@
 import { OutlineFilter } from "pixi-filters";
 import * as PIXI from "pixi.js";
+import { ObjectModel } from "./model.object";
 
 const LayerNameArr = [
    "blue-bg",
@@ -10,7 +11,7 @@ const LayerNameArr = [
    "obj-brick-blocks",
 ] as const;
 
-type LayerName = (typeof LayerNameArr)[number];
+export type LayerName = (typeof LayerNameArr)[number];
 
 interface TiledLayerBase {
    id: number;
@@ -223,12 +224,23 @@ export const createTiledMap = async (props: {
       }
    }
 
+   // const objects = metaData.layers
+   //    .filter((layer) => layer.type === "objectgroup")
+   //    .flatMap((layer) =>
+   //       layer.objects.map(
+   //          (obj) => new PIXI.Rectangle(obj.x, obj.y, obj.width, obj.height),
+   //       ),
+   //    );
+
    const objects = metaData.layers
       .filter((layer) => layer.type === "objectgroup")
       .flatMap((layer) =>
-         layer.objects.map(
-            (obj) => new PIXI.Rectangle(obj.x, obj.y, obj.width, obj.height),
-         ),
+         layer.objects.map((obj) => {
+            return new ObjectModel(
+               new PIXI.Rectangle(obj.x, obj.y, obj.width, obj.height),
+               layer.name,
+            );
+         }),
       );
 
    return { ctr, metaData, objects };

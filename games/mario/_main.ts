@@ -7,6 +7,7 @@ import { ZLayer } from "./game.enums";
 import { type GameVars, createGameVars } from "./game.vars";
 import { createInputCtrl } from "./input.control";
 import { MarioModel } from "./model.mario";
+import type { ObjectModel } from "./model.object";
 import { SystemMarioMove } from "./system.mario.move/system.mario.move";
 import type { EventMap } from "./util.events";
 
@@ -88,7 +89,7 @@ export const gameScene = (props: GameSceneProps): IScene => {
 
    let mario: MarioModel | undefined;
 
-   const objects: PIXI.Rectangle[] = [];
+   const objects: ObjectModel[] = [];
 
    return {
       load: async () => {
@@ -102,8 +103,8 @@ export const gameScene = (props: GameSceneProps): IScene => {
          game.addChild(tiledMap.ctr);
          objects.push(...tiledMap.objects);
 
-         mario = new MarioModel(assets.getTexture("mario-stand.png"));
-         game.addChild(mario.sprite);
+         mario = new MarioModel(assets.getTexture("small-mario-spritesheet.png"));
+         game.addChild(mario.anim);
 
          const resize = () => {
             const diff = app.screen.height / tiledMap.ctr.height;
@@ -117,7 +118,6 @@ export const gameScene = (props: GameSceneProps): IScene => {
       update: (tick: PIXI.Ticker) => {
          if (!mario) return;
 
-         mario.update(tick);
          crtFilter.time += 0.5;
          crtFilter.seed = Math.random();
 

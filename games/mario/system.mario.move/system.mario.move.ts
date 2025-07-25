@@ -1,228 +1,238 @@
 import * as PIXI from "pixi.js";
 import type { InputCtrl } from "../input.control";
 import type { MarioModel } from "../model.mario";
+import { ObjectModel } from "../model.object";
+
+// TODO: create animation for mario.
 
 export class SystemMarioMove {
    private _inputCtrl: InputCtrl;
+   private _gravity: number;
+   private _jumpForce: number;
+   private _moveSpeed: number;
+   private _maxFallSpeed: number;
+   private _velocityY = 0;
+   private _velocityX = 0;
+   private _friction = 0.8;
+   private _acceleration = 0.5;
+   private _curDeltaTime = 0.0;
+
    constructor(props: {
       inputCtrl: InputCtrl;
       gravity?: number;
+      jumpForce?: number;
+      moveSpeed?: number;
+      maxFallSpeed?: number;
    }) {
-      const { inputCtrl } = props;
+      const {
+         inputCtrl,
+         gravity = 0.25,
+         jumpForce = 5.15,
+         moveSpeed = 1.75,
+         maxFallSpeed = 4,
+      } = props;
+
       this._inputCtrl = inputCtrl;
+      this._gravity = gravity;
+      this._jumpForce = jumpForce;
+      this._moveSpeed = moveSpeed;
+      this._maxFallSpeed = maxFallSpeed;
    }
 
    update(props: {
       tick: PIXI.Ticker;
       mario: MarioModel;
-      objects: PIXI.Rectangle[];
-   }) {
-      this._handleGroundMove(props.mario);
-      this._handleMarioJump(props);
-      this._handleMarioMove(props);
-      this._handleGravity(props);
-      this._handleBlockBumping(props);
-   }
-
-   private _handleGroundMove(mario: MarioModel) {
-      const btn = this._inputCtrl.btn;
-      if (!mario.isOnGround) return;
-      if (btn.ArrowRight.data.pressed) {
-         mario.nexPos.x = mario.curPos.x + 3;
-      }
-      if (btn.ArrowLeft.data.pressed) {
-         mario.nexPos.x = mario.curPos.x - 3;
-      }
-   }
-
-   private _handleBlockBumping(props: {
-      tick: PIXI.Ticker;
-      mario: MarioModel;
-      objects: PIXI.Rectangle[];
+      objects: ObjectModel[];
    }) {
       const { tick, mario, objects } = props;
-      if (!mario.isJumping) return;
+      this._curDeltaTime = tick.deltaTime;
 
-      const marioRect = new PIXI.Rectangle(
-         mario.sprite.x,
-         mario.sprite.y,
-         mario.sprite.width,
-         mario.sprite.height,
-      );
-      for (let i = 0; i < objects.length; i++) {
-         const obj = objects[i];
-         if (!marioRect.intersects(obj)) continue;
-         if (marioRect.top <= obj.bottom) {
-            mario.sprite.y = obj.y + obj.height;
+      this._handleHorizontalMovement(mario);
+      this._handleJumping(mario);
+      this._applyGravity(mario);
+      this._updatePosition(mario, objects);
+   }
+
+   private _handleHorizontalMovement(mario: MarioModel) {
+      const leftPressed = this._inputCtrl.btn.ArrowLeft.data.pressed;
+      const rightPressed = this._inputCtrl.btn.ArrowRight.data.pressed;
+
+      if (mario.isOnGround) {
+         if (leftPressed || rightPressed) {
+            mario.animateRunning(this._curDeltaTime);
+         } else {
+            mario.setStanding();
+         }
+      }
+
+      if (leftPressed && !rightPressed) {
+         this._velocityX = Math.max(
+            this._velocityX - this._acceleration * this._curDeltaTime,
+            -this._moveSpeed,
+         );
+         mario.faceLeft();
+      } else if (rightPressed && !leftPressed) {
+         this._velocityX = Math.min(
+            this._velocityX + this._acceleration * this._curDeltaTime,
+            this._moveSpeed,
+         );
+         mario.faceRight();
+      } else {
+         // Apply friction when no input
+         this._velocityX *= this._friction ** this._curDeltaTime;
+         if (Math.abs(this._velocityX) < 0.1) {
+            this._velocityX = 0;
          }
       }
    }
 
-   private _handleGravity(props: {
-      tick: PIXI.Ticker;
-      mario: MarioModel;
-      objects: PIXI.Rectangle[];
-   }) {
-      const { tick, mario, objects } = props;
-      const dy = (tick.deltaMS / 1000) * 20;
-      if (mario.isJumping) return;
+   private _handleJumping(mario: MarioModel) {
+      // Jump when Z is pressed and Mario is on the ground
+      if (this._inputCtrl.btn.z.wasPressedOnce && mario.isOnGround) {
+         this._velocityY = -this._jumpForce;
+         mario.isJumping = true;
+         mario.isOnGround = false;
+         mario.setJumping();
+      }
 
-      const { sprite } = mario;
-      const futureY = sprite.y + dy;
+      // Variable jump height - if Z is released early, reduce upward velocity
+      if (this._inputCtrl.btn.z.wasReleasedOnce && this._velocityY < 0) {
+         this._velocityY *= 0.5;
+      }
+   }
 
-      const futureBounds = new PIXI.Rectangle(
-         sprite.x,
-         futureY,
-         sprite.width,
-         sprite.height,
+   private _applyGravity(mario: MarioModel) {
+      if (!mario.isOnGround) {
+         this._velocityY += this._gravity * this._curDeltaTime;
+         // Cap falling speed
+         if (this._velocityY > this._maxFallSpeed) {
+            this._velocityY = this._maxFallSpeed;
+         }
+      }
+   }
+
+   private _updatePosition(mario: MarioModel, objs: ObjectModel[]) {
+      // Store current position
+      const currentX = mario.anim.x;
+      const currentY = mario.anim.y;
+
+      const objects = objs.map((o) => shrinkObj(o));
+
+      // Calculate new positions with deltaTime
+      const newX = currentX + this._velocityX * this._curDeltaTime;
+      const newY = currentY + this._velocityY * this._curDeltaTime;
+
+      // Handle horizontal collision
+      const horizontalMarioRect = new PIXI.Rectangle(
+         newX,
+         currentY,
+         mario.anim.width,
+         mario.anim.height,
       );
 
-      mario.isOnGround = false;
-
+      let canMoveHorizontally = true;
       for (const obj of objects) {
-         const isAbove = sprite.y - sprite.height <= obj.y - 5;
-         const willOverlap = futureBounds.intersects(obj);
-
-         if (isAbove && willOverlap) {
-            sprite.y = obj.y - sprite.height;
-            mario.isOnGround = true;
+         if (horizontalMarioRect.intersects(obj.rect)) {
+            canMoveHorizontally = false;
+            this._velocityX = 0;
             break;
          }
       }
 
-      if (!mario.isOnGround) {
-         mario.nexPos.y = mario.curPos.y + 3;
+      if (canMoveHorizontally) {
+         mario.anim.x = newX;
+         mario.nexPos.x = newX;
       }
-   }
 
-   private _handleMarioMove(props: {
-      tick: PIXI.Ticker;
-      mario: MarioModel;
-      objects: PIXI.Rectangle[];
-   }) {
-      const { tick, mario } = props;
-      const moveSpeed = 100 * (tick.deltaMS * 0.001);
-      if (mario.curPos.y !== mario.nexPos.y) {
-         const needsToMoveUp = mario.curPos.y > mario.nexPos.y;
-         if (needsToMoveUp) {
-            mario.sprite.y -= moveSpeed * 2;
-            const overshotPos = mario.curPos.y < mario.nexPos.y;
-            if (overshotPos) {
-               mario.sprite.y = mario.nexPos.y;
+      // Handle vertical collision
+      const verticalMarioRect = new PIXI.Rectangle(
+         mario.anim.x,
+         newY,
+         mario.anim.width,
+         mario.anim.height,
+      );
+
+      let canMoveVertically = true;
+      let hitGround = false;
+      let hitCeiling = false;
+
+      for (const obj of objects) {
+         if (verticalMarioRect.intersects(obj.rect)) {
+            canMoveVertically = false;
+
+            // Check if Mario is falling (moving down) and hits an object
+            if (this._velocityY > 0) {
+               // Mario hit the ground/platform
+               mario.anim.y = obj.rect.y - mario.anim.height;
+               mario.isOnGround = true;
+               mario.isJumping = false;
+               hitGround = true;
+               mario.setStanding();
+            }
+            // Check if Mario is jumping (moving up) and hits an object
+            else if (this._velocityY < 0) {
+               // Mario hit a ceiling/block above
+               mario.anim.y = obj.rect.y + obj.rect.height;
+               hitCeiling = true;
+            }
+
+            this._velocityY = 0;
+            break;
+         }
+      }
+
+      if (canMoveVertically) {
+         mario.anim.y = newY;
+         // If Mario is moving and not colliding, he's not on ground
+         if (this._velocityY !== 0) {
+            mario.isOnGround = false;
+         }
+      }
+
+      // Update next position
+      mario.nexPos.y = mario.anim.y;
+
+      // Check if Mario is still on ground (for when he walks off a platform)
+      if (mario.isOnGround && !hitGround && this._velocityY >= 0) {
+         const groundCheckRect = new PIXI.Rectangle(
+            mario.anim.x,
+            mario.anim.y + 1, // Check slightly below Mario
+            mario.anim.width,
+            mario.anim.height,
+         );
+
+         let stillOnGround = false;
+         for (const obj of objects) {
+            if (groundCheckRect.intersects(obj.rect)) {
+               stillOnGround = true;
+               break;
             }
          }
-         const needsToMoveDn = mario.curPos.y < mario.nexPos.y;
-         if (needsToMoveDn) {
-            mario.sprite.y += moveSpeed * 2;
-            const overshotPos = mario.curPos.y > mario.nexPos.y;
-            if (overshotPos) {
-               mario.sprite.y = mario.nexPos.y;
-            }
+
+         if (!stillOnGround) {
+            mario.isOnGround = false;
          }
-      }
-
-      if (mario.curPos.x !== mario.nexPos.x) {
-         const needsToMoveRight = mario.curPos.x < mario.nexPos.x;
-         if (needsToMoveRight) {
-            mario.sprite.x += moveSpeed;
-            const overshotPos = mario.curPos.x > mario.nexPos.x;
-            if (overshotPos) {
-               mario.sprite.x = mario.nexPos.x;
-            }
-         }
-
-         const needsToMoveLeft = mario.curPos.x > mario.nexPos.x;
-         if (needsToMoveLeft) {
-            mario.sprite.x -= moveSpeed;
-            const overshotPos = mario.curPos.x < mario.nexPos.x;
-            if (overshotPos) {
-               mario.sprite.x = mario.nexPos.x;
-            }
-         }
-      }
-   }
-
-   private _curJumpVal = 0;
-   private _startJumpVal = 0;
-   private _maxJumpVal = 70;
-
-   private _handleMarioJump(props: {
-      tick: PIXI.Ticker;
-      mario: MarioModel;
-      objects: PIXI.Rectangle[];
-   }) {
-      const { tick, mario, objects } = props;
-      const jumpPressed = this._inputCtrl.btn.z.data.pressed;
-      const reachedMaxJump = this._curJumpVal >= this._maxJumpVal * 0.75;
-
-      // Start jump
-      if (jumpPressed && !reachedMaxJump && mario.isOnGround) {
-         mario.isJumping = true;
-         this._startJumpVal = mario.curPos.y;
-         this._curJumpVal = 0;
-         mario.isOnGround = false;
-      }
-
-      if (mario.isJumping) {
-         if (jumpPressed && !reachedMaxJump) {
-            // Smooth jump using cosine easing
-            const t = this._curJumpVal / this._maxJumpVal; // 0 to 1
-            const eased = Math.cos(t * (Math.PI / 2)); // 1 to 0
-            const jumpStep = 2.75 * eased; // Scaled jump step
-            mario.nexPos.y = mario.curPos.y - jumpStep;
-
-            this._curJumpVal = Math.abs(mario.nexPos.y - this._startJumpVal);
-         }
-      }
-
-      if (this._inputCtrl.btn.z.wasReleasedOnce || reachedMaxJump) {
-         mario.isJumping = false;
-      }
-      // Reset jump when landing
-      if (
-         mario.isOnGround &&
-         !mario.isJumping &&
-         this._inputCtrl.btn.z.data.released
-      ) {
-         this._curJumpVal = 0;
-         this._startJumpVal = 0;
-      }
-
-      this.marioInTheAir(props);
-   }
-
-   private _movingRight = false;
-   private _curHorzMoveVal = 0.0005;
-   private _defaultHorzMoveVal = 0.0005;
-   private marioInTheAir(props: {
-      tick: PIXI.Ticker;
-      mario: MarioModel;
-      objects: PIXI.Rectangle[];
-   }) {
-      const { tick, mario, objects } = props;
-      if (!mario.isOnGround) {
-         const moveSpeed = tick.deltaMS * 0.1;
-         if (this._inputCtrl.btn.ArrowRight.data.pressed) {
-            if (!this._movingRight) {
-               this._curHorzMoveVal = this._defaultHorzMoveVal;
-            }
-            this._movingRight = true;
-            this._curHorzMoveVal *= moveSpeed;
-            this._curHorzMoveVal = Math.min(this._curHorzMoveVal, 3);
-            mario.nexPos.x = mario.curPos.x + this._curHorzMoveVal;
-         }
-         if (this._inputCtrl.btn.ArrowLeft.data.pressed) {
-            if (this._movingRight) {
-               this._curHorzMoveVal = this._defaultHorzMoveVal;
-            }
-            this._movingRight = false;
-            this._curHorzMoveVal *= moveSpeed;
-            this._curHorzMoveVal = Math.min(this._curHorzMoveVal, 3);
-            mario.nexPos.x = mario.curPos.x - this._curHorzMoveVal;
-         }
-      }
-      if (mario.isOnGround) {
-         this._curHorzMoveVal = this._defaultHorzMoveVal;
       }
    }
 }
+
+const shrinkObj = (obj: ObjectModel) => {
+   const { x, y, width, height } = obj.rect;
+   const newRect = new PIXI.Rectangle(x, y, width, height);
+   const result = new ObjectModel(newRect, obj.type);
+
+   switch (obj.type) {
+      case "obj-q-blocks":
+      case "obj-brick-blocks": {
+         const shrinkValue = 3;
+         result.rect.x += shrinkValue;
+         result.rect.width -= shrinkValue * 2;
+         break;
+      }
+
+      default:
+         break;
+   }
+
+   return result;
+};
