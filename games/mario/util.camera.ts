@@ -1,4 +1,9 @@
-import { type IAnimateOptions, type IFollowOptions, Viewport } from "pixi-viewport";
+import {
+   type IAnimateOptions,
+   type IClampOptions,
+   type IFollowOptions,
+   Viewport,
+} from "pixi-viewport";
 import * as PIXI from "pixi.js";
 import type { Position } from "./types";
 
@@ -71,6 +76,8 @@ export const createCamera = (
 
    viewport.filters = [];
 
+   viewport.clamp({});
+
    return {
       worldWidth: () => viewport.worldWidth,
       worldHeight: () => viewport.worldHeight,
@@ -87,6 +94,7 @@ export const createCamera = (
       addFilter: (...filters: PIXI.Filter[]) => {
          viewport.filters = filters;
       },
+      clamp: (options?: IClampOptions) => viewport.clamp(options),
    };
 };
 
@@ -99,4 +107,5 @@ export interface Camera {
    vpBounds: () => PIXI.Rectangle;
    follow: (ctr: PIXI.Container, opt?: IFollowOptions) => void;
    addFilter: (...filters: PIXI.Filter[]) => void;
+   clamp: (options?: IClampOptions) => void;
 }

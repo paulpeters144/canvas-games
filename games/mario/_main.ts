@@ -145,6 +145,12 @@ export const gameScene = (props: GameSceneProps): IScene => {
          entityStore.add(mario);
 
          camera.follow(mario.anim);
+         camera.clamp({
+            left: 0,
+            top: 0,
+            right: tileMapData.metaData.width,
+            bottom: tileMapData.metaData.height,
+         });
       },
 
       update: (tick: PIXI.Ticker) => {
