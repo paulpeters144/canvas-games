@@ -10,11 +10,11 @@
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "mario-map-1-1.json": {
-            "scale": 8,
-            "selectedLayer": 4,
+            "scale": 2,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 415,
-                "y": 163.6875
+                "x": -8.5,
+                "y": -84.75
             }
         },
         "mario-map-1-1.tmj": {
@@ -29,8 +29,8 @@
             "scale": 1.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 372.33333333333337,
-                "y": 27.66666666666663
+                "x": 407.66666666666663,
+                "y": 127.66666666666663
             }
         },
         "test.tsx": {
