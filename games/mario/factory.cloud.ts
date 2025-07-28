@@ -2,17 +2,23 @@ import * as PIXI from "pixi.js";
 import type { TiledMapMetaData, TiledTileLayer } from "./game.atlas";
 
 export class Cloud {
-   sprite: PIXI.Sprite;
+   ctr: PIXI.Container;
 
-   constructor(sprite: PIXI.Sprite) {
-      this.sprite = sprite;
+   constructor(ctr: PIXI.Container) {
+      this.ctr = ctr;
    }
+}
+
+export interface CloudFactory {
+   createCloud1: () => Cloud;
+   createCloud2: () => Cloud;
+   createCloud3: () => Cloud;
 }
 
 export const createCloudFactory = (props: {
    json: string;
    atlas: PIXI.Texture;
-}) => {
+}): CloudFactory => {
    const metaData: TiledMapMetaData = JSON.parse(props.json);
 
    const getTileAt = (idx: number) => {
@@ -54,7 +60,7 @@ export const createCloudFactory = (props: {
 
       ctr.addChild(texture1, texture2, texture3, texture4);
 
-      return ctr;
+      return new Cloud(ctr);
    };
 
    const createCloud2 = () => {
@@ -82,7 +88,7 @@ export const createCloudFactory = (props: {
 
       ctr.addChild(texture1, texture2, texture3, texture4, texture5, texture6);
 
-      return ctr;
+      return new Cloud(ctr);
    };
 
    const createCloud3 = () => {
@@ -126,7 +132,7 @@ export const createCloudFactory = (props: {
          texture8,
       );
 
-      return ctr;
+      return new Cloud(ctr);
    };
 
    return { createCloud1, createCloud2, createCloud3 };

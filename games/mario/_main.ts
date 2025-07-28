@@ -9,13 +9,15 @@ import { type GameVars, createGameVars } from "./game.vars";
 import { createInputCtrl } from "./input.control";
 import { MarioModel } from "./model.mario";
 import { type CollisionArea, ObjectModel, type StartPoint } from "./model.object";
-import { SystemMarioMove } from "./system/system.mario.move";
+import { SystemCloudsMove } from "./system/system.move-clouds";
+import { SystemMarioMove } from "./system/system.move-mario";
+import { createCamera } from "./util.camera";
 import type { EventMap } from "./util.events";
 
 export const bus = eBus<EventMap>();
 
 // TODO
-// implement move system for clouds.
+// create a camera follow system on mario
 
 export async function createMario1Dash1Level(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
@@ -74,10 +76,11 @@ export const gameScene = (props: GameSceneProps): IScene => {
 
    const inputCtrl = createInputCtrl();
    const systemMove = new SystemMarioMove({ inputCtrl });
+   let systemCloud: SystemCloudsMove | undefined;
 
    const crtFilter = new CRTFilter({
       curvature: 1.0,
-      lineWidth: 1.3,
+      lineWidth: 2,
       lineContrast: 0.2,
       verticalLine: false,
       noiseSize: 0.1,
@@ -89,11 +92,13 @@ export const gameScene = (props: GameSceneProps): IScene => {
       time: 0.5,
    });
 
-   game.filters = [crtFilter];
+   // game.filters = [crtFilter];
 
    let mario: MarioModel | undefined;
 
    const objects: (ObjectModel | CollisionArea)[] = [];
+   const camera = createCamera(app, game);
+   // camera.addFilter(crtFilter);
 
    return {
       load: async () => {
@@ -110,12 +115,14 @@ export const gameScene = (props: GameSceneProps): IScene => {
                .filter((o) => o instanceof ObjectModel)
                .map((o) => o.sprite),
          );
-         const cloudFactory = createCloudFactory({
-            json: jsonMetaData,
-            atlas: atlasTexture,
+
+         systemCloud = new SystemCloudsMove({
+            cloudFactory: createCloudFactory({
+               json: jsonMetaData,
+               atlas: atlasTexture,
+            }),
+            game,
          });
-         const cloud1 = cloudFactory.createCloud3();
-         game.addChild(cloud1);
 
          objects.push(...mapObjs.collidables);
 
@@ -127,13 +134,10 @@ export const gameScene = (props: GameSceneProps): IScene => {
          setFromStartPoint({ obj: mario.anim, startPoint: marioStartPoint });
          game.addChild(mario.anim);
 
-         const resize = () => {
-            const diff = app.canvas.height / game.height;
-            app.stage.scale.set(diff);
-         };
-         setTimeout(resize, 50);
-
-         window.addEventListener("resize", () => resize());
+         // camera.animate({
+         //    position: { x: 50, y: 50 },
+         // });
+         camera.follow(mario.anim);
       },
 
       update: (tick: PIXI.Ticker) => {
@@ -141,6 +145,7 @@ export const gameScene = (props: GameSceneProps): IScene => {
          crtFilter.time += 0.5;
          crtFilter.seed = Math.random();
          systemMove.update({ tick, mario, objects });
+         systemCloud?.update(tick);
       },
    };
 };
