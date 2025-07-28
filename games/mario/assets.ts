@@ -3,8 +3,10 @@ import * as PIXI from "pixi.js";
 const BASE_PATH = "game-imgs/mario";
 
 export const assetFilePath = [
+   "brick-debris.png",
    "mario-atlas.png",
    "mario-stand.png",
+   "spin-coin-sheet.png",
    "small-mario-spritesheet.png",
 ] as const;
 export type AssetName = (typeof assetFilePath)[number];

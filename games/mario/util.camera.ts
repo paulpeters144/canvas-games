@@ -2,8 +2,8 @@ import { type IAnimateOptions, type IFollowOptions, Viewport } from "pixi-viewpo
 import * as PIXI from "pixi.js";
 import type { Position } from "./types";
 
-const GAME_WIDTH = 480;
-const GAME_HEIGHT = 260;
+export const GAME_WIDTH = 480;
+export const GAME_HEIGHT = 260;
 
 const delay = (num: number) => new Promise<void>((r) => setTimeout(() => r(), num));
 
@@ -38,7 +38,6 @@ export const createCamera = (
    };
 
    window.onresize = () => {
-      //   resizeHandler();
       setTimeout(resizeHandler, 0);
    };
 

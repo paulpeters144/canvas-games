@@ -1,10 +1,12 @@
 import * as PIXI from "pixi.js";
 import type { LayerName, TileObjectName } from "./game.atlas";
+import { Entity } from "./model.entity";
 import type { Position } from "./types";
 
-export class ObjectModel {
+abstract class Block extends Entity {
    public type: LayerName;
-   public sprite: PIXI.Sprite;
+   public data = "";
+   public sprite: PIXI.Sprite | PIXI.AnimatedSprite;
    public get rect(): PIXI.Rectangle {
       return new PIXI.Rectangle(
          this.sprite.x,
@@ -21,16 +23,34 @@ export class ObjectModel {
    }
 
    constructor(sprite: PIXI.Sprite, type: LayerName) {
+      super(sprite);
       this.sprite = sprite;
       this.type = type;
    }
-
-   bumpUp() {}
-
-   break() {}
 }
 
-export class CollisionArea {
+export class BrickBlock extends Block {}
+
+export class QuestionBlock extends Block {
+   active = true;
+
+   constructor(active: PIXI.Texture, inactive: PIXI.Texture) {
+      const anim = new PIXI.AnimatedSprite({ textures: [active, inactive] });
+      anim.currentFrame = 0;
+      super(anim, "obj-q-blocks");
+   }
+
+   bump() {
+      this.active = false;
+      if (this.ctr instanceof PIXI.AnimatedSprite) {
+         this.ctr.currentFrame = 1;
+      }
+   }
+}
+
+export class GroundBlock extends Block {}
+
+export class CollisionArea extends Entity {
    public type: LayerName;
    public rect: PIXI.Rectangle;
    public get center(): Position {
@@ -41,16 +61,18 @@ export class CollisionArea {
    }
 
    constructor(rect: PIXI.Rectangle, type: LayerName) {
+      super(new PIXI.Container({ ...rect }));
       this.rect = rect;
       this.type = type;
    }
 }
 
-export class StartPoint {
+export class StartPoint extends Entity {
    public name: TileObjectName;
    public pos: Position;
 
    constructor(pos: Position, name: TileObjectName) {
+      super(new PIXI.Container({ ...pos }));
       this.pos = { ...pos };
       this.name = name;
    }

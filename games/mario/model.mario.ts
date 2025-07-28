@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import { Entity } from "./model.entity";
 import type { Position } from "./types";
 
 enum frame {
@@ -11,11 +12,12 @@ enum frame {
    stop = 6,
 }
 
-export class MarioModel {
+export class MarioModel extends Entity {
    // sprite: PIXI.Sprite;
    anim: PIXI.AnimatedSprite;
    isJumping = false;
    isOnGround = false;
+   lastFellAt = performance.now();
    nexPos: Position;
    get curPos(): Position {
       return { x: this.anim.x, y: this.anim.y };
@@ -37,8 +39,6 @@ export class MarioModel {
    }
 
    constructor(spriteSheet: PIXI.Texture) {
-      // this.sprite = new PIXI.Sprite(stand);
-
       const width = 16;
       const height = 16;
       const frames = 7;
@@ -53,10 +53,10 @@ export class MarioModel {
          t.source.scaleMode = "nearest";
          return t;
       });
-
-      this.anim = new PIXI.AnimatedSprite({ textures });
+      const animatedSprite = new PIXI.AnimatedSprite({ textures });
+      super(animatedSprite);
+      this.anim = animatedSprite;
       this.anim.animationSpeed = 0.15;
-      // this.anim.play();
       this.anim.currentFrame = 1;
 
       this.nexPos = { x: this.anim.x, y: this.anim.y };

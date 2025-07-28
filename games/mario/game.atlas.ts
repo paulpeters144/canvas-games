@@ -1,6 +1,12 @@
 import { OutlineFilter } from "pixi-filters";
 import * as PIXI from "pixi.js";
-import { CollisionArea, ObjectModel, StartPoint } from "./model.object";
+import {
+   BrickBlock,
+   CollisionArea,
+   GroundBlock,
+   QuestionBlock,
+   StartPoint,
+} from "./model.object";
 
 const LayerNameArr = [
    "blue-bg",
@@ -202,7 +208,13 @@ export const createTiledMap = async (props: {
    };
 
    const createObjectSprites = (group: TiledObjectGroup) => {
-      const result: (ObjectModel | CollisionArea | StartPoint)[] = [];
+      const result: (
+         | BrickBlock
+         | QuestionBlock
+         | CollisionArea
+         | StartPoint
+         | GroundBlock
+      )[] = [];
       for (const mapObject of group.objects) {
          if (mapObject.gid) {
             if (mapObject.gid === 0) continue;
@@ -212,7 +224,22 @@ export const createTiledMap = async (props: {
             // why is this needed? this may be a bug issue with tiled.
             // I ended up resizing the map a few times, but I don't know if this is part of the bug with tiled.
             objectSprite.y = mapObject.y - 16;
-            result.push(new ObjectModel(objectSprite, group.name));
+            if (group.name === "obj-brick-blocks") {
+               result.push(new BrickBlock(objectSprite, group.name));
+            }
+            if (group.name === "obj-q-blocks") {
+               const qBlock = new QuestionBlock(
+                  getTileAt(mapObject.gid),
+                  getTileAt(230),
+               );
+               qBlock.data = mapObject.name;
+               qBlock.ctr.x = objectSprite.x;
+               qBlock.ctr.y = objectSprite.y;
+               result.push(qBlock);
+            }
+            if (group.name === "obj-ground") {
+               result.push(new GroundBlock(objectSprite, group.name));
+            }
          } else if (TileObjectNameArr.includes(mapObject.name)) {
             const startPoint = new StartPoint({ ...mapObject }, mapObject.name);
             result.push(startPoint);
@@ -241,7 +268,11 @@ export const createTiledMap = async (props: {
       .flatMap((layer) => createObjectSprites(layer));
 
    const collidables = objects.filter(
-      (o) => o instanceof ObjectModel || o instanceof CollisionArea,
+      (o) =>
+         o instanceof BrickBlock ||
+         o instanceof QuestionBlock ||
+         o instanceof GroundBlock ||
+         o instanceof CollisionArea,
    );
 
    const startPoints = objects.filter((o) => o instanceof StartPoint);
