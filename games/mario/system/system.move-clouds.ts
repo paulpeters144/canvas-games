@@ -30,7 +30,7 @@ export class SystemCloudsMove {
       for (let i = 0; i < this._clouds.length; i++) {
          const c = this._clouds[i];
          c.ctr.x -= tick.deltaTime * this._floatSpeed;
-         if (c.ctr.x + c.ctr.width + 10 < 0) {
+         if (c.ctr.x <= 0) {
             const desc = (a: Cloud, b: Cloud) => b.ctr.x - a.ctr.x;
             const furthestCloudToRight = this._clouds.sort(desc)[0];
             space(c).behind(furthestCloudToRight);

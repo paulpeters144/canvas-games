@@ -5,6 +5,8 @@ import type { Position } from "./types";
 const GAME_WIDTH = 480;
 const GAME_HEIGHT = 260;
 
+const delay = (num: number) => new Promise<void>((r) => setTimeout(() => r(), num));
+
 export const createCamera = (
    app: PIXI.Application,
    bgCtr: PIXI.Container,
@@ -37,8 +39,13 @@ export const createCamera = (
 
    window.onresize = () => {
       //   resizeHandler();
-      setTimeout(resizeHandler, 50);
+      setTimeout(resizeHandler, 0);
    };
+
+   (async () => {
+      await delay(25);
+      window.dispatchEvent(new CustomEvent("resize"));
+   })();
 
    app.stage.addChild(viewport);
    viewport.addChild(bgCtr);

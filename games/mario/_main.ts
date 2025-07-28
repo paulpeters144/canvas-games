@@ -79,26 +79,15 @@ export const gameScene = (props: GameSceneProps): IScene => {
    let systemCloud: SystemCloudsMove | undefined;
 
    const crtFilter = new CRTFilter({
-      curvature: 1.0,
-      lineWidth: 2,
-      lineContrast: 0.2,
-      verticalLine: false,
-      noiseSize: 0.1,
-      noise: 0.1,
       vignetting: 0.4,
-      vignettingAlpha: 0.15,
-      vignettingBlur: 0.3,
-      seed: 0.0,
-      time: 0.5,
+      vignettingAlpha: 0.2,
    });
-
-   // game.filters = [crtFilter];
 
    let mario: MarioModel | undefined;
 
    const objects: (ObjectModel | CollisionArea)[] = [];
    const camera = createCamera(app, game);
-   // camera.addFilter(crtFilter);
+   camera.addFilter(crtFilter);
 
    return {
       load: async () => {
