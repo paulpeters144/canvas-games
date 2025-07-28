@@ -6,4 +6,6 @@ export type EventMap = {
    brickBump: { id: string };
    qBlockBump: { id: string };
    coinAnim: Position;
+   marioChange: "grow" | "shrink";
+   mushroomSpawn: Position;
 };

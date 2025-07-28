@@ -5,9 +5,11 @@ const BASE_PATH = "game-imgs/mario";
 export const assetFilePath = [
    "brick-debris.png",
    "mario-atlas.png",
-   "mario-stand.png",
    "spin-coin-sheet.png",
    "small-mario-spritesheet.png",
+   "mario-grow-anim.png",
+   "large-mario-spritesheet.png",
+   "grow-mushroom.png",
 ] as const;
 export type AssetName = (typeof assetFilePath)[number];
 

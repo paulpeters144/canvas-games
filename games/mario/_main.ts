@@ -11,8 +11,10 @@ import { MarioModel } from "./model.mario";
 import { EntityStore } from "./store.entity";
 import { SystemBlockAction } from "./system.block-animation/system.block-action";
 import { SystemCoinAnimations } from "./system/system.coin.anim";
+import { SystemGrowMarioAnimation } from "./system/system.mario-grow-anim";
 import { SystemCloudsMove } from "./system/system.move-clouds";
 import { SystemMarioMove } from "./system/system.move-mario";
+import { SystemMushroomSpawn } from "./system/system.mushroom-grow";
 import { createCamera } from "./util.camera";
 import type { EventMap } from "./util.events";
 
@@ -89,6 +91,8 @@ export const gameScene = (props: GameSceneProps): IScene => {
       gameRef: game,
       assets,
    });
+   let systemMushroomSpawn: SystemMushroomSpawn | undefined;
+   let systemGrowMario: SystemGrowMarioAnimation | undefined;
 
    const crtFilter = new CRTFilter({
       vignetting: 0.4,
@@ -116,14 +120,26 @@ export const gameScene = (props: GameSceneProps): IScene => {
             }),
             game,
          });
+         systemGrowMario = new SystemGrowMarioAnimation({
+            gameRef: game,
+            entityStore,
+            assets,
+            camera,
+         });
+         systemMushroomSpawn = new SystemMushroomSpawn({
+            gameRef: game,
+            assets,
+            entityStore,
+         });
 
          entityStore.add(...tileMapData.objects.collidables);
 
          const spMario = (o: { name: string }) => o.name === "sp_mario";
          const marioStartPoint = tileMapData.objects.startPoints.find(spMario);
-         const mario = new MarioModel(
-            assets.getTexture("small-mario-spritesheet.png"),
-         );
+         const mario = new MarioModel({
+            smallMarioSheet: assets.getTexture("small-mario-spritesheet.png"),
+            largeMarioSheet: assets.getTexture("large-mario-spritesheet.png"),
+         });
          mario.anim.x = marioStartPoint?.pos.x ?? 0;
          mario.anim.y = marioStartPoint?.pos.y ?? 0;
          entityStore.add(mario);
@@ -135,10 +151,21 @@ export const gameScene = (props: GameSceneProps): IScene => {
          crtFilter.time += 0.5;
          crtFilter.seed = Math.random();
 
+         const marioState = entityStore.firstOrDefault(MarioModel)?.state || "";
+
+         if (inputCtrl.btn["1"].wasPressedOnce && marioState === "small") {
+            bus.fire("marioChange", "grow");
+         }
+         if (inputCtrl.btn["2"].wasPressedOnce && marioState === "big") {
+            bus.fire("marioChange", "shrink");
+         }
+
          systemMove.update(tick);
          systemCloud?.update(tick);
          systemBlockAction.update(tick);
          systemCoinAnim.update(tick);
+         systemGrowMario?.update(tick);
+         systemMushroomSpawn?.update(tick);
       },
    };
 };

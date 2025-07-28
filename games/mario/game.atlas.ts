@@ -1,5 +1,6 @@
 import { OutlineFilter } from "pixi-filters";
 import * as PIXI from "pixi.js";
+import { ZLayer } from "./game.enums";
 import {
    BrickBlock,
    CollisionArea,
@@ -274,6 +275,10 @@ export const createTiledMap = async (props: {
          o instanceof GroundBlock ||
          o instanceof CollisionArea,
    );
+
+   collidables.map((c) => {
+      c.ctr.zIndex = ZLayer.btm;
+   });
 
    const startPoints = objects.filter((o) => o instanceof StartPoint);
 

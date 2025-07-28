@@ -30,9 +30,9 @@ const games = [
       init: GAME.createBtcNetworkSim,
    },
    {
-      id: "placeholder3",
-      title: "Placeholder",
-      image: "game-imgs/space-game.png",
+      id: "super-mario",
+      title: "Super Mario",
+      image: "game-imgs/mario/game-im.png",
       init: GAME.createMario1Dash1Level,
    },
    {

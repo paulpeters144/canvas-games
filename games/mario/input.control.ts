@@ -76,6 +76,8 @@ const buttonNames = [
    "Escape",
    "z",
    "x",
+   "1",
+   "2",
 ] as const;
 
 type ButtonName = (typeof buttonNames)[number];

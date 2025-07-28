@@ -53,14 +53,13 @@ export class SystemMarioMove {
    }
 
    update(tick: PIXI.Ticker) {
-      // const { tick, objects } = props;
       this._curDeltaTime = tick.deltaTime;
       const mario = this._entityStore.firstOrDefault(MarioModel);
-      if (!mario) return;
+      if (!mario || mario.isPaused) return;
+      this._updatePosition(mario);
       this._handleHorizontalMovement(mario);
       this._handleJumping(mario);
       this._applyGravity(mario);
-      this._updatePosition(mario);
    }
 
    private _handleHorizontalMovement(mario: MarioModel) {
@@ -144,24 +143,17 @@ export class SystemMarioMove {
    }
 
    private _updatePosition(mario: MarioModel) {
-      const objs = [
+      const objects = [
          ...this._entityStore.getAll(BrickBlock),
          ...this._entityStore.getAll(QuestionBlock),
          ...this._entityStore.getAll(GroundBlock),
          ...this._entityStore.getAll(CollisionArea),
-      ];
-
-      // Store current position
-      const currentX = mario.anim.x;
-      const currentY = mario.anim.y;
-
-      // no need to calc against all the objs, just the closest ones.
-      const objects = objs
+      ]
          .filter(
             (o) =>
                Math.abs(o.center.x - mario.center.x) < 50 &&
                Math.abs(o.center.y - mario.center.y) < 50,
-         )
+         ) // everything within 50 pixels
          .sort((a, b) => {
             const distA =
                (a.center.x - mario.center.x) ** 2 +
@@ -169,8 +161,12 @@ export class SystemMarioMove {
             const distB =
                (b.center.x - mario.center.x) ** 2 +
                (b.center.y - mario.center.y) ** 2;
-            return distA - distB; // smaller distance comes first
+            return distA - distB; // put the closest to the front
          });
+
+      // Store current position
+      const currentX = mario.anim.x;
+      const currentY = mario.anim.y;
 
       // Calculate new positions with deltaTime
       const newX = currentX + this._velocityX * this._curDeltaTime;
@@ -226,20 +222,27 @@ export class SystemMarioMove {
             // Check if Mario is jumping (moving up) and hits an object
             else if (this._velocityY < 0) {
                if (obj instanceof QuestionBlock && obj.active) {
-                  // this._entityStore.remove(obj);
-                  // bus.fire("qBlockBump", { x: obj.ctr.x, y: obj.ctr.y });
-                  // this._gameRef.removeChild(obj.sprite);
                   if (obj.data === "coin") {
                      bus.fire("coinAnim", { x: obj.rect.x, y: obj.rect.y - 20 });
                   }
-                  obj.bump();
+                  if (obj.data === "mushroom") {
+                     bus.fire("mushroomSpawn", {
+                        x: obj.rect.x,
+                        y: obj.rect.y - 10,
+                     });
+                  }
 
+                  obj.bump();
                   bus.fire("qBlockBump", { id: obj.id });
                }
                if (obj instanceof BrickBlock) {
-                  // this._entityStore.remove(obj);
-                  // bus.fire("brickBrake", { x: obj.ctr.x, y: obj.ctr.y });
-                  bus.fire("brickBump", { id: obj.id });
+                  if (mario.state === "big") {
+                     this._entityStore.remove(obj);
+                     bus.fire("brickBrake", { x: obj.ctr.x, y: obj.ctr.y });
+                  }
+                  if (mario.state === "small") {
+                     bus.fire("brickBump", { id: obj.id });
+                  }
                }
                mario.anim.y = obj.rect.y + obj.rect.height;
                hitCeiling = true;
