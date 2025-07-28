@@ -1,9 +1,7 @@
 import * as PIXI from "pixi.js";
 import type { InputCtrl } from "../input.control";
 import type { MarioModel } from "../model.mario";
-import { ObjectModel } from "../model.object";
-
-// TODO: create animation for mario.
+import type { CollisionArea, ObjectModel } from "../model.object";
 
 export class SystemMarioMove {
    private _inputCtrl: InputCtrl;
@@ -42,7 +40,7 @@ export class SystemMarioMove {
    update(props: {
       tick: PIXI.Ticker;
       mario: MarioModel;
-      objects: ObjectModel[];
+      objects: (ObjectModel | CollisionArea)[];
    }) {
       const { tick, mario, objects } = props;
       this._curDeltaTime = tick.deltaTime;
@@ -56,27 +54,45 @@ export class SystemMarioMove {
    private _handleHorizontalMovement(mario: MarioModel) {
       const leftPressed = this._inputCtrl.btn.ArrowLeft.data.pressed;
       const rightPressed = this._inputCtrl.btn.ArrowRight.data.pressed;
+      const fastRunPressed = this._inputCtrl.btn.x.data.pressed;
 
       if (mario.isOnGround) {
          if (leftPressed || rightPressed) {
-            mario.animateRunning(this._curDeltaTime);
+            const dt = fastRunPressed
+               ? this._curDeltaTime * 1.5
+               : this._curDeltaTime;
+            mario.animateRunning(dt);
          } else {
             mario.setStanding();
          }
       }
 
-      if (leftPressed && !rightPressed) {
+      const controlForLeft = leftPressed && !rightPressed;
+      const controlForRight = rightPressed && !leftPressed;
+
+      if (controlForLeft) mario.faceLeft();
+      if (controlForRight) mario.faceRight();
+
+      if (controlForLeft && fastRunPressed) {
+         this._velocityX = Math.max(
+            this._velocityX - this._acceleration * this._curDeltaTime,
+            -this._moveSpeed * 1.5,
+         );
+      } else if (controlForRight && fastRunPressed) {
+         this._velocityX = Math.min(
+            this._velocityX + this._acceleration * this._curDeltaTime,
+            this._moveSpeed * 1.5,
+         );
+      } else if (controlForLeft) {
          this._velocityX = Math.max(
             this._velocityX - this._acceleration * this._curDeltaTime,
             -this._moveSpeed,
          );
-         mario.faceLeft();
-      } else if (rightPressed && !leftPressed) {
+      } else if (controlForRight) {
          this._velocityX = Math.min(
             this._velocityX + this._acceleration * this._curDeltaTime,
             this._moveSpeed,
          );
-         mario.faceRight();
       } else {
          // Apply friction when no input
          this._velocityX *= this._friction ** this._curDeltaTime;
@@ -111,12 +127,20 @@ export class SystemMarioMove {
       }
    }
 
-   private _updatePosition(mario: MarioModel, objs: ObjectModel[]) {
+   private _updatePosition(
+      mario: MarioModel,
+      objs: (ObjectModel | CollisionArea)[],
+   ) {
       // Store current position
       const currentX = mario.anim.x;
       const currentY = mario.anim.y;
 
-      const objects = objs.map((o) => shrinkObj(o));
+      // no need to calc against all the objs, just the closest ones.
+      const objects = objs.filter(
+         (o) =>
+            Math.abs(o.center.x - mario.center.x) < 50 &&
+            Math.abs(o.center.y - mario.center.y) < 50,
+      );
 
       // Calculate new positions with deltaTime
       const newX = currentX + this._velocityX * this._curDeltaTime;
@@ -132,7 +156,7 @@ export class SystemMarioMove {
 
       let canMoveHorizontally = true;
       for (const obj of objects) {
-         if (horizontalMarioRect.intersects(obj.rect)) {
+         if (intersects({ rect1: horizontalMarioRect, rect2: obj.rect })) {
             canMoveHorizontally = false;
             this._velocityX = 0;
             break;
@@ -157,7 +181,7 @@ export class SystemMarioMove {
       let hitCeiling = false;
 
       for (const obj of objects) {
-         if (verticalMarioRect.intersects(obj.rect)) {
+         if (intersects({ rect1: verticalMarioRect, rect2: obj.rect })) {
             canMoveVertically = false;
 
             // Check if Mario is falling (moving down) and hits an object
@@ -172,6 +196,13 @@ export class SystemMarioMove {
             // Check if Mario is jumping (moving up) and hits an object
             else if (this._velocityY < 0) {
                // Mario hit a ceiling/block above
+               // TODO: need see what object is hit here.
+               if (obj.type === "obj-q-blocks") {
+                  // console.log("hit q block!");
+               }
+               if (obj.type === "obj-brick-blocks") {
+                  // console.log("hit brick block!");
+               }
                mario.anim.y = obj.rect.y + obj.rect.height;
                hitCeiling = true;
             }
@@ -203,7 +234,7 @@ export class SystemMarioMove {
 
          let stillOnGround = false;
          for (const obj of objects) {
-            if (groundCheckRect.intersects(obj.rect)) {
+            if (intersects({ rect1: groundCheckRect, rect2: obj.rect })) {
                stillOnGround = true;
                break;
             }
@@ -211,28 +242,53 @@ export class SystemMarioMove {
 
          if (!stillOnGround) {
             mario.isOnGround = false;
+            mario.anim.currentFrame = 2;
          }
       }
    }
 }
 
-const shrinkObj = (obj: ObjectModel) => {
-   const { x, y, width, height } = obj.rect;
-   const newRect = new PIXI.Rectangle(x, y, width, height);
-   const result = new ObjectModel(newRect, obj.type);
-
-   switch (obj.type) {
-      case "obj-q-blocks":
-      case "obj-brick-blocks": {
-         const shrinkValue = 3;
-         result.rect.x += shrinkValue;
-         result.rect.width -= shrinkValue * 2;
-         break;
-      }
-
-      default:
-         break;
+const intersects = (props: {
+   rect1: PIXI.Rectangle;
+   rect2: PIXI.Rectangle;
+   buffer?: number;
+}) => {
+   const { rect1, rect2, buffer } = props;
+   if (buffer) {
+      const buffed1 = new PIXI.Rectangle(
+         rect1.x + buffer,
+         rect1.y + buffer,
+         rect1.width - buffer * 2,
+         rect1.height - buffer * 2,
+      );
+      const buffed2 = new PIXI.Rectangle(
+         rect2.x + buffer,
+         rect2.y + buffer,
+         rect2.width - buffer * 2,
+         rect2.height - buffer * 2,
+      );
+      return buffed1.intersects(buffed2);
    }
-
-   return result;
+   return rect1.intersects(rect2);
 };
+
+// const shrinkObj = (obj: ObjectModel) => {
+//    const { x, y, width, height } = obj.rect;
+//    const newRect = new PIXI.Rectangle(x, y, width, height);
+//    const result = new ObjectModel(newRect, obj.type);
+
+//    switch (obj.type) {
+//       case "obj-q-blocks":
+//       case "obj-brick-blocks": {
+//          const shrinkValue = 3;
+//          result.rect.x += shrinkValue;
+//          result.rect.width -= shrinkValue * 2;
+//          break;
+//       }
+
+//       default:
+//          break;
+//    }
+
+//    return result;
+// };

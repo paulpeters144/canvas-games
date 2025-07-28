@@ -1,6 +1,6 @@
 import { OutlineFilter } from "pixi-filters";
 import * as PIXI from "pixi.js";
-import { ObjectModel } from "./model.object";
+import { CollisionArea, ObjectModel, StartPoint } from "./model.object";
 
 const LayerNameArr = [
    "blue-bg",
@@ -9,11 +9,15 @@ const LayerNameArr = [
    "obj-ground",
    "obj-q-blocks",
    "obj-brick-blocks",
+   "start-points",
 ] as const;
 
 export type LayerName = (typeof LayerNameArr)[number];
 
-interface TiledLayerBase {
+const TileObjectNameArr = ["sp_mario"] as const;
+export type TileObjectName = (typeof TileObjectNameArr)[number];
+
+export interface TiledLayerBase {
    id: number;
    name: LayerName;
    opacity: number;
@@ -23,23 +27,23 @@ interface TiledLayerBase {
    y: number;
 }
 
-interface TiledTileLayer extends TiledLayerBase {
+export interface TiledTileLayer extends TiledLayerBase {
    data: number[];
    height: number;
    width: number;
    type: "tilelayer";
 }
 
-interface TiledObjectGroup extends TiledLayerBase {
+export interface TiledObjectGroup extends TiledLayerBase {
    draworder: string;
    objects: TiledObject[];
    type: "objectgroup";
 }
 
-interface TiledObject {
+export interface TiledObject {
    height: number;
    id: number;
-   name: string;
+   name: "sp_mario";
    rotation: number;
    type: string;
    visible: boolean;
@@ -49,12 +53,12 @@ interface TiledObject {
    gid?: number;
 }
 
-interface TiledTileset {
+export interface TiledTileset {
    firstgid: number;
    source: string;
 }
 
-interface TiledMapMetaData {
+export interface TiledMapMetaData {
    compressionlevel: number;
    height: number;
    infinite: boolean;
@@ -197,20 +201,32 @@ export const createTiledMap = async (props: {
       return layerContainer;
    };
 
-   const createObjectGroup = (group: TiledObjectGroup) => {
-      const objectContainer = new PIXI.Container();
-
+   const createObjectSprites = (group: TiledObjectGroup) => {
+      const result: (ObjectModel | CollisionArea | StartPoint)[] = [];
       for (const mapObject of group.objects) {
          if (mapObject.gid) {
             if (mapObject.gid === 0) continue;
             const objectTexture = getTileAt(mapObject.gid);
             const objectSprite = new PIXI.Sprite(objectTexture);
             objectSprite.x = mapObject.x;
-            objectSprite.y = mapObject.y;
-            objectContainer.addChild(objectSprite);
+            // why is this needed? this may be a bug issue with tiled.
+            // I ended up resizing the map a few times, but I don't know if this is part of the bug with tiled.
+            objectSprite.y = mapObject.y - 16;
+            result.push(new ObjectModel(objectSprite, group.name));
+         } else if (TileObjectNameArr.includes(mapObject.name)) {
+            const startPoint = new StartPoint({ ...mapObject }, mapObject.name);
+            result.push(startPoint);
+         } else {
+            const rect = new PIXI.Rectangle(
+               mapObject.x,
+               mapObject.y,
+               mapObject.width,
+               mapObject.height,
+            );
+            result.push(new CollisionArea(rect, group.name));
          }
       }
-      return objectContainer;
+      return result;
    };
 
    for (const layer of metaData.layers) {
@@ -218,30 +234,17 @@ export const createTiledMap = async (props: {
          const layerCtr = await createTileLayer(layer);
          ctr.addChild(layerCtr);
       }
-      if (layer.type === "objectgroup") {
-         const layerCtr = createObjectGroup(layer);
-         ctr.addChild(layerCtr);
-      }
    }
-
-   // const objects = metaData.layers
-   //    .filter((layer) => layer.type === "objectgroup")
-   //    .flatMap((layer) =>
-   //       layer.objects.map(
-   //          (obj) => new PIXI.Rectangle(obj.x, obj.y, obj.width, obj.height),
-   //       ),
-   //    );
 
    const objects = metaData.layers
       .filter((layer) => layer.type === "objectgroup")
-      .flatMap((layer) =>
-         layer.objects.map((obj) => {
-            return new ObjectModel(
-               new PIXI.Rectangle(obj.x, obj.y, obj.width, obj.height),
-               layer.name,
-            );
-         }),
-      );
+      .flatMap((layer) => createObjectSprites(layer));
 
-   return { ctr, metaData, objects };
+   const collidables = objects.filter(
+      (o) => o instanceof ObjectModel || o instanceof CollisionArea,
+   );
+
+   const startPoints = objects.filter((o) => o instanceof StartPoint);
+
+   return { ctr, metaData, objects: { collidables, startPoints } };
 };

@@ -2,16 +2,20 @@ import { eBus } from "games/util/event-bus";
 import { CRTFilter } from "pixi-filters/crt";
 import * as PIXI from "pixi.js";
 import { createGameAssets } from "./assets";
+import { createCloudFactory } from "./factory.cloud";
 import { createTiledMap, fetchAtlasMetadata } from "./game.atlas";
 import { ZLayer } from "./game.enums";
 import { type GameVars, createGameVars } from "./game.vars";
 import { createInputCtrl } from "./input.control";
 import { MarioModel } from "./model.mario";
-import type { ObjectModel } from "./model.object";
-import { SystemMarioMove } from "./system.mario.move/system.mario.move";
+import { type CollisionArea, ObjectModel, type StartPoint } from "./model.object";
+import { SystemMarioMove } from "./system/system.mario.move";
 import type { EventMap } from "./util.events";
 
 export const bus = eBus<EventMap>();
+
+// TODO
+// implement move system for clouds.
 
 export async function createMario1Dash1Level(app: PIXI.Application) {
    const game: PIXI.Container = new PIXI.Container();
@@ -89,39 +93,64 @@ export const gameScene = (props: GameSceneProps): IScene => {
 
    let mario: MarioModel | undefined;
 
-   const objects: ObjectModel[] = [];
+   const objects: (ObjectModel | CollisionArea)[] = [];
 
    return {
       load: async () => {
          await assets.load();
          const jsonMetaData = await fetchAtlasMetadata();
          const atlasTexture = assets.getTexture("mario-atlas.png");
-         const tiledMap = await createTiledMap({
+         const { objects: mapObjs, ctr } = await createTiledMap({
             json: jsonMetaData,
             atlas: atlasTexture,
          });
-         game.addChild(tiledMap.ctr);
-         objects.push(...tiledMap.objects);
+         game.addChild(ctr);
+         game.addChild(
+            ...mapObjs.collidables
+               .filter((o) => o instanceof ObjectModel)
+               .map((o) => o.sprite),
+         );
+         const cloudFactory = createCloudFactory({
+            json: jsonMetaData,
+            atlas: atlasTexture,
+         });
+         const cloud1 = cloudFactory.createCloud3();
+         game.addChild(cloud1);
 
+         objects.push(...mapObjs.collidables);
+
+         const spMario = (o: { name: string }) => o.name === "sp_mario";
+         const marioStartPoint = mapObjs.startPoints.find(spMario);
          mario = new MarioModel(assets.getTexture("small-mario-spritesheet.png"));
+         mario.anim.x = marioStartPoint?.pos.x ?? 0;
+         mario.anim.y = marioStartPoint?.pos.y ?? 0;
+         setFromStartPoint({ obj: mario.anim, startPoint: marioStartPoint });
          game.addChild(mario.anim);
 
          const resize = () => {
-            const diff = app.screen.height / tiledMap.ctr.height;
+            const diff = app.canvas.height / game.height;
             app.stage.scale.set(diff);
          };
          setTimeout(resize, 50);
 
-         window.addEventListener("resize", () => setTimeout(() => resize, 500));
+         window.addEventListener("resize", () => resize());
       },
 
       update: (tick: PIXI.Ticker) => {
          if (!mario) return;
-
          crtFilter.time += 0.5;
          crtFilter.seed = Math.random();
-
          systemMove.update({ tick, mario, objects });
       },
    };
+};
+
+const setFromStartPoint = (props: {
+   obj: { x: number; y: number; width: number; height: number };
+   startPoint?: StartPoint;
+}) => {
+   const { obj, startPoint } = props;
+   if (!startPoint) return;
+   obj.x = startPoint.pos.x - obj.width * 0.5;
+   obj.y = startPoint.pos.y - obj.height;
 };

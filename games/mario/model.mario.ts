@@ -29,6 +29,12 @@ export class MarioModel {
    get isIdle(): boolean {
       return this.isIdleX && this.isIdleY;
    }
+   public get center(): Position {
+      return {
+         x: this.anim.x + this.anim.width,
+         y: this.anim.y + this.anim.height,
+      };
+   }
 
    constructor(spriteSheet: PIXI.Texture) {
       // this.sprite = new PIXI.Sprite(stand);
