@@ -146,10 +146,12 @@ export const gameScene = (props: GameSceneProps): IScene => {
 
          camera.follow(mario.anim);
          camera.clamp({
+            direction: "all",
             left: 0,
             top: 0,
             right: tileMapData.metaData.width,
             bottom: tileMapData.metaData.height,
+            underflow: "center",
          });
       },
 
