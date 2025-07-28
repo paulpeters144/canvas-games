@@ -4,6 +4,7 @@ import type { MarioModel } from "../model.mario";
 import type { CollisionArea, ObjectModel } from "../model.object";
 
 export class SystemMarioMove {
+   private _gameRef: PIXI.Container;
    private _inputCtrl: InputCtrl;
    private _gravity: number;
    private _jumpForce: number;
@@ -16,6 +17,7 @@ export class SystemMarioMove {
    private _curDeltaTime = 0.0;
 
    constructor(props: {
+      gameRef: PIXI.Container;
       inputCtrl: InputCtrl;
       gravity?: number;
       jumpForce?: number;
@@ -23,6 +25,7 @@ export class SystemMarioMove {
       maxFallSpeed?: number;
    }) {
       const {
+         gameRef,
          inputCtrl,
          gravity = 0.25,
          jumpForce = 5.15,
@@ -30,6 +33,7 @@ export class SystemMarioMove {
          maxFallSpeed = 4,
       } = props;
 
+      this._gameRef = gameRef;
       this._inputCtrl = inputCtrl;
       this._gravity = gravity;
       this._jumpForce = jumpForce;

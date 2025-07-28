@@ -75,7 +75,7 @@ export const gameScene = (props: GameSceneProps): IScene => {
    const { game, assets } = gameVars;
 
    const inputCtrl = createInputCtrl();
-   const systemMove = new SystemMarioMove({ inputCtrl });
+   const systemMove = new SystemMarioMove({ inputCtrl, gameRef: game });
    let systemCloud: SystemCloudsMove | undefined;
 
    const crtFilter = new CRTFilter({
